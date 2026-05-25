@@ -14,7 +14,8 @@ const productQuery = (slug: string) =>
     queryFn: async () => {
       const { data: product } = await supabase.from("products").select("*").eq("slug", slug).eq("is_active", true).maybeSingle();
       if (!product) throw notFound();
-      const { data: similar } = await supabase.from("products").select("id,name,slug,price,promo_price,images,short_description").eq("is_active", true).neq("id", product.id).eq("category_id", product.category_id).limit(4);
+      const similarQuery = supabase.from("products").select("id,name,slug,price,promo_price,images,short_description").eq("is_active", true).neq("id", product.id).limit(4);
+      const { data: similar } = product.category_id ? await similarQuery.eq("category_id", product.category_id) : await similarQuery;
       return { product, similar: similar ?? [] };
     },
   });
