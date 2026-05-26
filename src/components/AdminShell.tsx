@@ -7,12 +7,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin, claimFirstAdmin } from "@/lib/admin.functions";
 
-const NAV = [
+const NAV: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }> = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/orders", label: "Commandes", icon: ShoppingBag },
   { to: "/admin/products", label: "Produits", icon: Package },
   { to: "/admin/communes", label: "Communes", icon: MapPin },
-] as const;
+];
 
 export function AdminShell({ children, title }: { children: ReactNode; title: string }) {
   const navigate = useNavigate();
