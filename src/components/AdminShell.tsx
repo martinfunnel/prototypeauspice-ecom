@@ -117,7 +117,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
               return (
                 <Link
                   key={n.to}
-                  to={n.to}
+                  to={n.to as "/admin"}
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
                     active
                       ? "bg-primary text-primary-foreground"
