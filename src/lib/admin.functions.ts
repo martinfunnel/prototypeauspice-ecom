@@ -256,6 +256,32 @@ export const deleteCommune = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Image Upload ----------
+export const uploadProductImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({
+      base64: z.string(),
+      ext: z.enum(["jpg", "png"]),
+    }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const base64Data = data.base64.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    const filename = `${crypto.randomUUID()}.${data.ext}`;
+    const { data: uploadData, error } = await supabaseAdmin.storage
+      .from("product-images")
+      .upload(filename, buffer, {
+        contentType: data.ext === "png" ? "image/png" : "image/jpeg",
+      });
+    if (error) throw new Error(error.message);
+    const { data: urlData } = supabaseAdmin.storage
+      .from("product-images")
+      .getPublicUrl(uploadData.path);
+    return { url: urlData.publicUrl };
+  });
+
 // ---------- Self-promote (bootstrap first admin) ----------
 export const claimFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

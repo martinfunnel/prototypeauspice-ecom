@@ -3,15 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Image as ImageIcon, XCircle } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import {
   listProductsAdmin,
   listCategoriesAdmin,
   upsertProduct,
   deleteProduct,
+  uploadProductImage,
 } from "@/lib/admin.functions";
 import { formatCFA } from "@/lib/format";
+
+type ImageItem =
+  | { kind: "url"; value: string }
+  | { kind: "file"; file: File; preview: string };
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [{ title: "Produits — Admin" }] }),
@@ -28,7 +33,6 @@ type Editing = {
   promo_price: string;
   stock: string;
   category_id: string;
-  images: string;
   is_active: boolean;
   is_popular: boolean;
 };
@@ -43,7 +47,6 @@ const empty: Editing = {
   promo_price: "",
   stock: "0",
   category_id: "",
-  images: "",
   is_active: true,
   is_popular: false,
 };
@@ -75,13 +78,21 @@ function AdminProducts() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Editing>(empty);
+  const [images, setImages] = useState<ImageItem[]>([]);
+  const uploadImg = useServerFn(uploadProductImage);
 
   const save = useMutation({
     mutationFn: async () => {
-      const images = form.images
-        .split(/[\n,]/)
-        .map((x) => x.trim())
-        .filter(Boolean);
+      const imageUrls: string[] = [];
+      for (const img of images) {
+        if (img.kind === "url") {
+          imageUrls.push(img.value);
+        } else {
+          const ext = img.file.type === "image/png" ? "png" : "jpg";
+          const res = await uploadImg({ data: { base64: img.preview, ext } });
+          imageUrls.push(res.url);
+        }
+      }
       return upsert({
         data: {
           id: form.id ?? undefined,
@@ -93,7 +104,7 @@ function AdminProducts() {
           promo_price: form.promo_price ? Number(form.promo_price) : null,
           stock: Number(form.stock),
           category_id: form.category_id || null,
-          images,
+          images: imageUrls,
           is_active: form.is_active,
           is_popular: form.is_popular,
         },
@@ -103,6 +114,7 @@ function AdminProducts() {
       toast.success("Produit enregistré");
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      setImages([]);
       setOpen(false);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erreur"),
@@ -119,6 +131,7 @@ function AdminProducts() {
 
   function startNew() {
     setForm(empty);
+    setImages([]);
     setOpen(true);
   }
   function startEdit(p: NonNullable<typeof products>[number]) {
@@ -132,10 +145,10 @@ function AdminProducts() {
       promo_price: p.promo_price ? String(p.promo_price) : "",
       stock: String(p.stock),
       category_id: p.category_id ?? "",
-      images: (p.images ?? []).join("\n"),
       is_active: p.is_active,
       is_popular: p.is_popular,
     });
+    setImages((p.images ?? []).map((url) => ({ kind: "url" as const, value: url })));
     setOpen(true);
   }
 
@@ -352,14 +365,49 @@ function AdminProducts() {
                 </select>
               </Field>
 
-              <Field label="Images (URLs, une par ligne)">
-                <textarea
-                  value={form.images}
-                  onChange={(e) => setForm((f) => ({ ...f, images: e.target.value }))}
-                  rows={3}
-                  placeholder="https://…"
+              <Field label="Images du produit (JPEG/PNG)">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).filter((f) =>
+                      ["image/jpeg", "image/png"].includes(f.type),
+                    );
+                    files.forEach((file) => {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setImages((prev) => [
+                          ...prev,
+                          { kind: "file" as const, file, preview: reader.result as string },
+                        ]);
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                    e.target.value = "";
+                  }}
                   className={inputCls}
                 />
+                {images.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {images.map((img, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={img.kind === "url" ? img.value : img.preview}
+                          alt=""
+                          className="h-20 w-20 rounded-lg object-cover border border-border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-destructive text-white"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Field>
 
               <div className="flex flex-wrap gap-4 pt-1">
