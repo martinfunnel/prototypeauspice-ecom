@@ -33,7 +33,6 @@ type Editing = {
   promo_price: string;
   stock: string;
   category_id: string;
-  images: string;
   is_active: boolean;
   is_popular: boolean;
 };
@@ -48,7 +47,6 @@ const empty: Editing = {
   promo_price: "",
   stock: "0",
   category_id: "",
-  images: "",
   is_active: true,
   is_popular: false,
 };
