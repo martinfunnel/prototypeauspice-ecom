@@ -83,10 +83,16 @@ function AdminProducts() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const images = form.images
-        .split(/[\n,]/)
-        .map((x) => x.trim())
-        .filter(Boolean);
+      const imageUrls: string[] = [];
+      for (const img of images) {
+        if (img.kind === "url") {
+          imageUrls.push(img.value);
+        } else {
+          const ext = img.file.type === "image/png" ? "png" : "jpg";
+          const res = await uploadImg({ data: { base64: img.preview, ext } });
+          imageUrls.push(res.url);
+        }
+      }
       return upsert({
         data: {
           id: form.id ?? undefined,
@@ -98,7 +104,7 @@ function AdminProducts() {
           promo_price: form.promo_price ? Number(form.promo_price) : null,
           stock: Number(form.stock),
           category_id: form.category_id || null,
-          images,
+          images: imageUrls,
           is_active: form.is_active,
           is_popular: form.is_popular,
         },
@@ -108,6 +114,7 @@ function AdminProducts() {
       toast.success("Produit enregistré");
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      setImages([]);
       setOpen(false);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erreur"),
