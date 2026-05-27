@@ -131,6 +131,7 @@ function AdminProducts() {
 
   function startNew() {
     setForm(empty);
+    setImages([]);
     setOpen(true);
   }
   function startEdit(p: NonNullable<typeof products>[number]) {
@@ -144,10 +145,10 @@ function AdminProducts() {
       promo_price: p.promo_price ? String(p.promo_price) : "",
       stock: String(p.stock),
       category_id: p.category_id ?? "",
-      images: (p.images ?? []).join("\n"),
       is_active: p.is_active,
       is_popular: p.is_popular,
     });
+    setImages((p.images ?? []).map((url) => ({ kind: "url" as const, value: url })));
     setOpen(true);
   }
 
