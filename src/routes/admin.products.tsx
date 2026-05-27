@@ -3,15 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Image as ImageIcon, XCircle } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import {
   listProductsAdmin,
   listCategoriesAdmin,
   upsertProduct,
   deleteProduct,
+  uploadProductImage,
 } from "@/lib/admin.functions";
 import { formatCFA } from "@/lib/format";
+
+type ImageItem =
+  | { kind: "url"; value: string }
+  | { kind: "file"; file: File; preview: string };
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [{ title: "Produits — Admin" }] }),
