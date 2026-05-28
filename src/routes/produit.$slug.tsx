@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -38,11 +38,13 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [img, setImg] = useState(0);
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const price = Number(p.promo_price ?? p.price);
 
   const addToCart = () => {
     addItem({ productId: p.id, name: p.name, price, image: p.images?.[0] ?? null }, qty);
     toast.success(`${p.name} ajouté au panier`);
+    navigate({ to: "/panier" });
   };
 
   return (
@@ -82,7 +84,7 @@ function ProductPage() {
               <ShoppingCart className="h-4 w-4" /> Ajouter au panier
             </button>
           </div>
-          <Link to="/panier" className="mt-3 block w-full rounded-xl border border-primary px-6 py-3 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Voir le panier</Link>
+          <Link to="/panier" className="mt-3 block w-full rounded-xl border border-primary px-6 py-3 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Voir mon panier</Link>
         </div>
       </div>
 
