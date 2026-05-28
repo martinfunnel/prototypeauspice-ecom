@@ -61,6 +61,21 @@ export function SiteHeader() {
               </span>
             ) : null}
           </Link>
+          <Link
+            to="/admin/login"
+            className="hidden h-10 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground/80 transition hover:border-accent hover:text-accent sm:inline-flex"
+            aria-label="Espace administrateur"
+            title="Espace administrateur"
+          >
+            <LogIn className="h-4 w-4" /> Admin
+          </Link>
+          <Link
+            to="/admin/login"
+            className="grid h-10 w-10 place-items-center rounded-md text-foreground/80 transition hover:bg-muted sm:hidden"
+            aria-label="Espace administrateur"
+          >
+            <LogIn className="h-5 w-5" />
+          </Link>
           <button
             className="grid h-10 w-10 place-items-center rounded-md text-foreground/80 hover:bg-muted md:hidden"
             onClick={() => setOpen((s) => !s)}
