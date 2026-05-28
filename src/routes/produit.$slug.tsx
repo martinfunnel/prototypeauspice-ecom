@@ -38,11 +38,13 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [img, setImg] = useState(0);
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const price = Number(p.promo_price ?? p.price);
 
   const addToCart = () => {
     addItem({ productId: p.id, name: p.name, price, image: p.images?.[0] ?? null }, qty);
     toast.success(`${p.name} ajouté au panier`);
+    navigate({ to: "/panier" });
   };
 
   return (
