@@ -84,7 +84,7 @@ function ProductPage() {
               <ShoppingCart className="h-4 w-4" /> Ajouter au panier
             </button>
           </div>
-          <Link to="/panier" className="mt-3 block w-full rounded-xl border border-primary px-6 py-3 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Voir le panier</Link>
+          <Link to="/panier" className="mt-3 block w-full rounded-xl border border-primary px-6 py-3 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Voir mon panier</Link>
         </div>
       </div>
 
