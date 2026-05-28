@@ -58,9 +58,8 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-primary-foreground/10">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-primary-foreground/60 md:flex-row">
+        <div className="container mx-auto px-4 py-4 text-center text-xs text-primary-foreground/60">
           <span>© {new Date().getFullYear()} Santé Ivoire. Tous droits réservés.</span>
-          <Link to="/admin/login" className="hover:text-accent">Espace administrateur</Link>
         </div>
       </div>
     </footer>
