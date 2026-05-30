@@ -29,6 +29,7 @@ type Editing = {
   slug: string;
   short_description: string;
   description: string;
+  benefits: string;
   price: string;
   promo_price: string;
   stock: string;
@@ -43,6 +44,7 @@ const empty: Editing = {
   slug: "",
   short_description: "",
   description: "",
+  benefits: "",
   price: "",
   promo_price: "",
   stock: "0",
@@ -105,6 +107,7 @@ function AdminProducts() {
           stock: Number(form.stock),
           category_id: form.category_id || null,
           images: imageUrls,
+          benefits: form.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
           is_active: form.is_active,
           is_popular: form.is_popular,
         },
@@ -141,6 +144,7 @@ function AdminProducts() {
       slug: p.slug,
       short_description: p.short_description ?? "",
       description: p.description ?? "",
+      benefits: ((p as { benefits?: string[] | null }).benefits ?? []).join("\n"),
       price: String(p.price),
       promo_price: p.promo_price ? String(p.promo_price) : "",
       stock: String(p.stock),
@@ -317,6 +321,17 @@ function AdminProducts() {
                   className={inputCls}
                 />
               </Field>
+
+              <Field label="Avantages / bénéfices (un par ligne)">
+                <textarea
+                  value={form.benefits}
+                  onChange={(e) => setForm((f) => ({ ...f, benefits: e.target.value }))}
+                  rows={4}
+                  placeholder={"100% naturel\nLivraison rapide\nGarantie satisfait ou remboursé"}
+                  className={inputCls}
+                />
+              </Field>
+
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Prix (FCFA) *">

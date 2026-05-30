@@ -180,6 +180,7 @@ export type Database = {
       }
       products: {
         Row: {
+          benefits: string[]
           category_id: string | null
           created_at: string
           description: string | null
@@ -196,6 +197,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          benefits?: string[]
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -212,6 +214,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          benefits?: string[]
           category_id?: string | null
           created_at?: string
           description?: string | null

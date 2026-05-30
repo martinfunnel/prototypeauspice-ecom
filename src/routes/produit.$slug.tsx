@@ -2,7 +2,7 @@ import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Check, ShieldCheck, Truck, Wallet } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCFA } from "@/lib/format";
@@ -115,7 +115,17 @@ function ProductPage() {
           </div>
           <p className="mt-2 inline-block rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success">💵 Paiement à la livraison disponible</p>
           {p.short_description ? <p className="mt-5 text-base text-foreground/80">{p.short_description}</p> : null}
-          {p.description ? <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">{p.description}</p> : null}
+
+          {Array.isArray((p as { benefits?: string[] }).benefits) && (p as { benefits?: string[] }).benefits!.length > 0 ? (
+            <ul className="mt-5 space-y-2">
+              {(p as { benefits: string[] }).benefits.slice(0, 4).map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           <div className="mt-6 flex items-center gap-3">
             <span className="text-sm font-semibold">Quantité :</span>
@@ -171,6 +181,61 @@ function ProductPage() {
         </div>
       </div>
 
+      {/* ----- Section vente : avantages + détails + galerie ----- */}
+      {(() => {
+        const benefits = (p as { benefits?: string[] }).benefits ?? [];
+        const gallery = (p.images ?? []).slice(1);
+        const hasContent = benefits.length > 0 || p.description || gallery.length > 0;
+        if (!hasContent) return null;
+        return (
+          <div className="mt-16 space-y-12">
+            {benefits.length > 0 ? (
+              <section>
+                <h2 className="font-display text-2xl font-bold md:text-3xl">Pourquoi choisir ce produit ?</h2>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {benefits.map((b, i) => (
+                    <div key={i} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-card">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/15 text-success">
+                        <Check className="h-5 w-5" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground/90">{b}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {p.description ? (
+              <section>
+                <h2 className="font-display text-2xl font-bold md:text-3xl">Détails du produit</h2>
+                <div className="mt-5 rounded-2xl border border-border bg-card p-6 md:p-8">
+                  <p className="whitespace-pre-line text-base leading-relaxed text-foreground/80">{p.description}</p>
+                </div>
+              </section>
+            ) : null}
+
+            {gallery.length > 0 ? (
+              <section>
+                <h2 className="font-display text-2xl font-bold md:text-3xl">En images</h2>
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                  {gallery.map((src, i) => (
+                    <div key={i} className="aspect-square overflow-hidden rounded-xl bg-muted">
+                      <img src={src} alt={`${p.name} ${i + 2}`} className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <section className="grid gap-4 sm:grid-cols-3">
+              <Reassurance icon={<Truck className="h-5 w-5" />} title="Livraison rapide" text="Partout à Abidjan et environs" />
+              <Reassurance icon={<Wallet className="h-5 w-5" />} title="Paiement à la livraison" text="Payez seulement à la réception" />
+              <Reassurance icon={<ShieldCheck className="h-5 w-5" />} title="Produits vérifiés" text="Qualité contrôlée à chaque commande" />
+            </section>
+          </div>
+        );
+      })()}
+
       {data.similar.length > 0 ? (
         <div className="mt-16">
           <h2 className="font-display text-2xl font-bold">Produits similaires</h2>
@@ -180,6 +245,18 @@ function ProductPage() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function Reassurance({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-border bg-background p-5">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">{icon}</div>
+      <div>
+        <p className="font-semibold">{title}</p>
+        <p className="text-sm text-muted-foreground">{text}</p>
+      </div>
+    </div>
   );
 }
 
