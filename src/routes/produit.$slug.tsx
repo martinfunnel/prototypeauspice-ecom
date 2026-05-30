@@ -1,12 +1,14 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCFA } from "@/lib/format";
-import { useCart } from "@/lib/cart";
 import { ProductCard } from "@/components/ProductCard";
+import { createOrder } from "@/lib/orders.functions";
+import { notifyAdminInNewTab } from "@/lib/whatsapp";
 
 const productQuery = (slug: string) =>
   queryOptions({
@@ -16,7 +18,8 @@ const productQuery = (slug: string) =>
       if (!product) throw notFound();
       const similarQuery = supabase.from("products").select("id,name,slug,price,promo_price,images,short_description").eq("is_active", true).neq("id", product.id).limit(4);
       const { data: similar } = product.category_id ? await similarQuery.eq("category_id", product.category_id) : await similarQuery;
-      return { product, similar: similar ?? [] };
+      const { data: communes } = await supabase.from("communes").select("id,name,zone,delivery_fee,delivery_days").eq("is_active", true).order("zone").order("name");
+      return { product, similar: similar ?? [], communes: communes ?? [] };
     },
   });
 
@@ -37,14 +40,54 @@ function ProductPage() {
   const p = data.product;
   const [qty, setQty] = useState(1);
   const [img, setImg] = useState(0);
-  const { addItem } = useCart();
   const navigate = useNavigate();
+  const createOrderFn = useServerFn(createOrder);
   const price = Number(p.promo_price ?? p.price);
 
-  const addToCart = () => {
-    addItem({ productId: p.id, name: p.name, price, image: p.images?.[0] ?? null }, qty);
-    toast.success(`${p.name} ajouté au panier`);
-    navigate({ to: "/panier" });
+  const [form, setForm] = useState({ customerName: "", customerPhone: "", communeId: "", address: "" });
+  const [submitting, setSubmitting] = useState(false);
+
+  const commune = useMemo(() => data.communes.find((c) => c.id === form.communeId), [data.communes, form.communeId]);
+  const subtotal = price * qty;
+  const deliveryFee = commune ? Number(commune.delivery_fee) : 0;
+  const total = subtotal + deliveryFee;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.customerName || !form.customerPhone || !form.communeId || !form.address) {
+      toast.error("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await createOrderFn({
+        data: {
+          customerName: form.customerName,
+          customerPhone: form.customerPhone,
+          communeId: form.communeId,
+          address: form.address,
+          items: [{ productId: p.id, quantity: qty }],
+        },
+      });
+      notifyAdminInNewTab({
+        order_number: result.orderNumber,
+        customer_name: form.customerName,
+        customer_phone: form.customerPhone,
+        commune_name: commune?.name ?? "",
+        address: form.address,
+        subtotal,
+        delivery_fee: deliveryFee,
+        total: result.total,
+        order_items: [{ product_name: p.name, quantity: qty }],
+      });
+      toast.success("Commande envoyée ! L'admin a été notifié.");
+      sessionStorage.setItem("last_phone", form.customerPhone);
+      navigate({ to: "/suivi" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la commande");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -74,17 +117,57 @@ function ProductPage() {
           {p.short_description ? <p className="mt-5 text-base text-foreground/80">{p.short_description}</p> : null}
           {p.description ? <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">{p.description}</p> : null}
 
-          <div className="mt-8 flex items-center gap-3">
+          <div className="mt-6 flex items-center gap-3">
+            <span className="text-sm font-semibold">Quantité :</span>
             <div className="flex items-center rounded-lg border border-border">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center hover:bg-muted"><Minus className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center hover:bg-muted"><Minus className="h-4 w-4" /></button>
               <span className="w-10 text-center font-semibold">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="grid h-11 w-11 place-items-center hover:bg-muted"><Plus className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setQty(qty + 1)} className="grid h-11 w-11 place-items-center hover:bg-muted"><Plus className="h-4 w-4" /></button>
             </div>
-            <button onClick={addToCart} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent hover:opacity-95">
-              <ShoppingCart className="h-4 w-4" /> Ajouter au panier
-            </button>
           </div>
-          <Link to="/panier" className="mt-3 block w-full rounded-xl border border-primary px-6 py-3 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Voir mon panier</Link>
+        </div>
+      </div>
+
+      <div className="mt-12 rounded-2xl border border-border bg-card p-6 shadow-card md:p-8">
+        <h2 className="font-display text-2xl font-bold">Commander ce produit</h2>
+        <p className="mt-1 text-sm text-success">💵 Paiement à la livraison</p>
+
+        <div className="mt-6 grid gap-8 md:grid-cols-[1.5fr_1fr]">
+          <form onSubmit={submit} className="space-y-4">
+            <Field label="Nom complet *">
+              <input required value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className={inputCls} />
+            </Field>
+            <Field label="Numéro de téléphone *">
+              <input required type="tel" value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })} placeholder="+225 07 00 00 00 00" className={inputCls} />
+            </Field>
+            <Field label="Commune / lieu de livraison *">
+              <select required value={form.communeId} onChange={(e) => setForm({ ...form, communeId: e.target.value })} className={inputCls}>
+                <option value="">— Sélectionner —</option>
+                {data.communes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.zone}) — {formatCFA(c.delivery_fee)}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Adresse précise *">
+              <textarea required rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Quartier, rue, point de repère..." className={inputCls} />
+            </Field>
+            <button disabled={submitting} className="w-full rounded-xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-accent disabled:opacity-60">
+              {submitting ? "Envoi..." : `Confirmer la commande (${formatCFA(total)})`}
+            </button>
+          </form>
+
+          <aside className="h-fit rounded-2xl border border-border bg-background p-5">
+            <h3 className="font-display text-lg font-bold">Récapitulatif</h3>
+            <div className="mt-4 flex justify-between text-sm">
+              <span className="text-foreground/80">{qty}× {p.name}</span>
+              <span className="font-semibold">{formatCFA(subtotal)}</span>
+            </div>
+            <div className="mt-4 space-y-1 border-t border-border pt-3 text-sm">
+              <Row label="Sous-total" value={formatCFA(subtotal)} />
+              <Row label="Livraison" value={commune ? formatCFA(deliveryFee) : "—"} />
+              <Row label="Total" value={formatCFA(total)} bold />
+            </div>
+          </aside>
         </div>
       </div>
 
@@ -98,4 +181,12 @@ function ProductPage() {
       ) : null}
     </section>
   );
+}
+
+const inputCls = "w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent";
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block"><span className="mb-1.5 block text-sm font-semibold">{label}</span>{children}</label>;
+}
+function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return <div className={`flex justify-between ${bold ? "text-base font-bold text-primary" : "text-foreground/80"}`}><span>{label}</span><span>{value}</span></div>;
 }

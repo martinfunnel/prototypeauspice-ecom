@@ -29,7 +29,7 @@ function OrderPage() {
   const navigate = useNavigate();
   const createOrderFn = useServerFn(createOrder);
 
-  const [form, setForm] = useState({ customerName: "", customerPhone: "", communeId: "", address: "", notes: "" });
+  const [form, setForm] = useState({ customerName: "", customerPhone: "", communeId: "", address: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const commune = useMemo(() => communes.find((c) => c.id === form.communeId), [communes, form.communeId]);
@@ -59,7 +59,6 @@ function OrderPage() {
           customerPhone: form.customerPhone,
           communeId: form.communeId,
           address: form.address,
-          notes: form.notes || undefined,
           items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         },
       });
@@ -70,7 +69,6 @@ function OrderPage() {
         customer_phone: form.customerPhone,
         commune_name: commune?.name ?? "",
         address: form.address,
-        notes: form.notes,
         subtotal,
         delivery_fee: deliveryFee,
         total: result.total,
@@ -110,9 +108,6 @@ function OrderPage() {
           </Field>
           <Field label="Adresse précise *">
             <textarea required rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Quartier, rue, point de repère..." className={inputCls} />
-          </Field>
-          <Field label="Notes (optionnel)">
-            <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={inputCls} />
           </Field>
           <button disabled={submitting} className="w-full rounded-xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-accent disabled:opacity-60">
             {submitting ? "Envoi..." : `Confirmer la commande (${formatCFA(total)})`}
