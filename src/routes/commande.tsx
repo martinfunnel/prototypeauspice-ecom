@@ -59,7 +59,6 @@ function OrderPage() {
           customerPhone: form.customerPhone,
           communeId: form.communeId,
           address: form.address,
-          notes: form.notes || undefined,
           items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         },
       });
