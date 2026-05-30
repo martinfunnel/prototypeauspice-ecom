@@ -107,6 +107,7 @@ function AdminProducts() {
           stock: Number(form.stock),
           category_id: form.category_id || null,
           images: imageUrls,
+          benefits: form.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
           is_active: form.is_active,
           is_popular: form.is_popular,
         },
