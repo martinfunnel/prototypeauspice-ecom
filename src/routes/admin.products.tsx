@@ -29,6 +29,7 @@ type Editing = {
   slug: string;
   short_description: string;
   description: string;
+  benefits: string;
   price: string;
   promo_price: string;
   stock: string;
@@ -43,6 +44,7 @@ const empty: Editing = {
   slug: "",
   short_description: "",
   description: "",
+  benefits: "",
   price: "",
   promo_price: "",
   stock: "0",
