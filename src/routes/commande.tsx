@@ -69,7 +69,6 @@ function OrderPage() {
         customer_phone: form.customerPhone,
         commune_name: commune?.name ?? "",
         address: form.address,
-        notes: form.notes,
         subtotal,
         delivery_fee: deliveryFee,
         total: result.total,
