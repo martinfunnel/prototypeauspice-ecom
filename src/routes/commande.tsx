@@ -29,7 +29,7 @@ function OrderPage() {
   const navigate = useNavigate();
   const createOrderFn = useServerFn(createOrder);
 
-  const [form, setForm] = useState({ customerName: "", customerPhone: "", communeId: "", address: "", notes: "" });
+  const [form, setForm] = useState({ customerName: "", customerPhone: "", communeId: "", address: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const commune = useMemo(() => communes.find((c) => c.id === form.communeId), [communes, form.communeId]);
