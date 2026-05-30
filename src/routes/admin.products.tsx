@@ -144,6 +144,7 @@ function AdminProducts() {
       slug: p.slug,
       short_description: p.short_description ?? "",
       description: p.description ?? "",
+      benefits: ((p as { benefits?: string[] | null }).benefits ?? []).join("\n"),
       price: String(p.price),
       promo_price: p.promo_price ? String(p.promo_price) : "",
       stock: String(p.stock),
