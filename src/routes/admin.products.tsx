@@ -322,6 +322,17 @@ function AdminProducts() {
                 />
               </Field>
 
+              <Field label="Avantages / bénéfices (un par ligne)">
+                <textarea
+                  value={form.benefits}
+                  onChange={(e) => setForm((f) => ({ ...f, benefits: e.target.value }))}
+                  rows={4}
+                  placeholder={"100% naturel\nLivraison rapide\nGarantie satisfait ou remboursé"}
+                  className={inputCls}
+                />
+              </Field>
+
+
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field label="Prix (FCFA) *">
                   <input
