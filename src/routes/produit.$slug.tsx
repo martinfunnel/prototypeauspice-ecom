@@ -115,7 +115,17 @@ function ProductPage() {
           </div>
           <p className="mt-2 inline-block rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success">💵 Paiement à la livraison disponible</p>
           {p.short_description ? <p className="mt-5 text-base text-foreground/80">{p.short_description}</p> : null}
-          {p.description ? <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">{p.description}</p> : null}
+
+          {Array.isArray((p as { benefits?: string[] }).benefits) && (p as { benefits?: string[] }).benefits!.length > 0 ? (
+            <ul className="mt-5 space-y-2">
+              {(p as { benefits: string[] }).benefits.slice(0, 4).map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           <div className="mt-6 flex items-center gap-3">
             <span className="text-sm font-semibold">Quantité :</span>
