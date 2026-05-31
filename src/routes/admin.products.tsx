@@ -439,6 +439,51 @@ function AdminProducts() {
                 )}
               </Field>
 
+              <Field label="Images de la section « Détails du produit » (JPEG/PNG)">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).filter((f) =>
+                      ["image/jpeg", "image/png"].includes(f.type),
+                    );
+                    files.forEach((file) => {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setDetailImages((prev) => [
+                          ...prev,
+                          { kind: "file" as const, file, preview: reader.result as string },
+                        ]);
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                    e.target.value = "";
+                  }}
+                  className={inputCls}
+                />
+                {detailImages.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {detailImages.map((img, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={img.kind === "url" ? img.value : img.preview}
+                          alt=""
+                          className="h-20 w-20 rounded-lg object-cover border border-border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setDetailImages((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-destructive text-white"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Field>
+
               <div className="flex flex-wrap gap-4 pt-1">
                 <label className="flex items-center gap-2 text-sm">
                   <input
