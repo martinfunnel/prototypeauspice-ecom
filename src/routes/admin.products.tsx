@@ -86,16 +86,21 @@ function AdminProducts() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const imageUrls: string[] = [];
-      for (const img of images) {
-        if (img.kind === "url") {
-          imageUrls.push(img.value);
-        } else {
-          const ext = img.file.type === "image/png" ? "png" : "jpg";
-          const res = await uploadImg({ data: { base64: img.preview, ext } });
-          imageUrls.push(res.url);
+      const uploadAll = async (items: ImageItem[]) => {
+        const urls: string[] = [];
+        for (const img of items) {
+          if (img.kind === "url") {
+            urls.push(img.value);
+          } else {
+            const ext = img.file.type === "image/png" ? "png" : "jpg";
+            const res = await uploadImg({ data: { base64: img.preview, ext } });
+            urls.push(res.url);
+          }
         }
-      }
+        return urls;
+      };
+      const imageUrls = await uploadAll(images);
+      const detailUrls = await uploadAll(detailImages);
       return upsert({
         data: {
           id: form.id ?? undefined,
@@ -108,6 +113,7 @@ function AdminProducts() {
           stock: Number(form.stock),
           category_id: form.category_id || null,
           images: imageUrls,
+          detail_images: detailUrls,
           benefits: form.benefits.split("\n").map((s) => s.trim()).filter(Boolean),
           is_active: form.is_active,
           is_popular: form.is_popular,
@@ -119,6 +125,7 @@ function AdminProducts() {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
       setImages([]);
+      setDetailImages([]);
       setOpen(false);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erreur"),
