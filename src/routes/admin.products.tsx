@@ -81,6 +81,7 @@ function AdminProducts() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Editing>(empty);
   const [images, setImages] = useState<ImageItem[]>([]);
+  const [detailImages, setDetailImages] = useState<ImageItem[]>([]);
   const uploadImg = useServerFn(uploadProductImage);
 
   const save = useMutation({
