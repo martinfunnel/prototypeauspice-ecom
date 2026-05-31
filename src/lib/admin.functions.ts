@@ -151,6 +151,7 @@ const ProductSchema = z.object({
   stock: z.number().int().min(0).max(100000),
   category_id: z.string().uuid().nullable().optional(),
   images: z.array(z.string().url().max(1000)).max(10).default([]),
+  detail_images: z.array(z.string().url().max(1000)).max(20).default([]),
   benefits: z.array(z.string().trim().min(1).max(300)).max(20).default([]),
   is_active: z.boolean().default(true),
   is_popular: z.boolean().default(false),
