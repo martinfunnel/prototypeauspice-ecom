@@ -172,6 +172,7 @@ export const upsertProduct = createServerFn({ method: "POST" })
       stock: data.stock,
       category_id: data.category_id ?? null,
       images: data.images,
+      detail_images: data.detail_images,
       benefits: data.benefits,
       is_active: data.is_active,
       is_popular: data.is_popular,
