@@ -205,14 +205,29 @@ function ProductPage() {
               </section>
             ) : null}
 
-            {p.description ? (
-              <section>
-                <h2 className="font-display text-2xl font-bold md:text-3xl">Détails du produit</h2>
-                <div className="mt-5 rounded-2xl border border-border bg-card p-6 md:p-8">
-                  <p className="whitespace-pre-line text-base leading-relaxed text-foreground/80">{p.description}</p>
-                </div>
-              </section>
-            ) : null}
+            {(() => {
+              const detailImgs = ((p as { detail_images?: string[] | null }).detail_images) ?? [];
+              if (!p.description && detailImgs.length === 0) return null;
+              return (
+                <section>
+                  <h2 className="font-display text-2xl font-bold md:text-3xl">Détails du produit</h2>
+                  <div className="mt-5 rounded-2xl border border-border bg-card p-6 md:p-8">
+                    {p.description ? (
+                      <p className="whitespace-pre-line text-base leading-relaxed text-foreground/80">{p.description}</p>
+                    ) : null}
+                    {detailImgs.length > 0 ? (
+                      <div className={`grid gap-4 ${p.description ? "mt-6" : ""} sm:grid-cols-2`}>
+                        {detailImgs.map((src, i) => (
+                          <div key={i} className="overflow-hidden rounded-xl bg-muted">
+                            <img src={src} alt={`${p.name} détail ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
+              );
+            })()}
 
             {gallery.length > 0 ? (
               <section>
