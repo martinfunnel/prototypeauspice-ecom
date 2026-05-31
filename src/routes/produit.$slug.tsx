@@ -185,7 +185,8 @@ function ProductPage() {
       {(() => {
         const benefits = (p as { benefits?: string[] }).benefits ?? [];
         const gallery = (p.images ?? []).slice(1);
-        const hasContent = benefits.length > 0 || p.description || gallery.length > 0;
+        const detailImgs = ((p as { detail_images?: string[] | null }).detail_images) ?? [];
+        const hasContent = benefits.length > 0 || p.description || gallery.length > 0 || detailImgs.length > 0;
         if (!hasContent) return null;
         return (
           <div className="mt-16 space-y-12">
