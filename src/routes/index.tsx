@@ -1,17 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, Truck, ShieldCheck, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, Phone, Sparkles, Check, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
+import { formatCFA } from "@/lib/format";
+import cacaoAsset from "@/assets/cacao-cannelle-ceylan.jpeg.asset.json";
+
+const FEATURED_SLUG = "cacaocelyan";
 
 const homeQuery = queryOptions({
   queryKey: ["home"],
   queryFn: async () => {
-    const [{ data: products }, { data: categories }] = await Promise.all([
+    const [{ data: products }, { data: categories }, { data: featured }] = await Promise.all([
       supabase.from("products").select("id,name,slug,price,promo_price,images,short_description,is_popular").eq("is_active", true).order("is_popular", { ascending: false }).limit(8),
       supabase.from("categories").select("id,name,slug,description").order("sort_order").limit(6),
+      supabase.from("products").select("id,name,slug,price,promo_price,short_description,benefits").eq("slug", FEATURED_SLUG).eq("is_active", true).maybeSingle(),
     ]);
-    return { products: products ?? [], categories: categories ?? [] };
+    return { products: products ?? [], categories: categories ?? [], featured: featured ?? null };
   },
 });
 
@@ -54,12 +59,61 @@ function Home() {
             </div>
           </div>
           <div className="relative hidden md:block">
-            <div className="relative mx-auto aspect-square w-full max-w-md rounded-3xl bg-gradient-to-br from-accent/40 to-teal/30 p-8 shadow-elevated">
-              <div className="grid h-full place-items-center text-9xl">💊</div>
-            </div>
+            <Link to="/produit/$slug" params={{ slug: FEATURED_SLUG }} className="group relative mx-auto block aspect-square w-full max-w-md rounded-3xl bg-gradient-to-br from-accent/40 to-teal/30 p-6 shadow-elevated transition hover:scale-[1.02]">
+              <img src={cacaoAsset.url} alt="Poudre de cacao brute à la cannelle de Ceylan — MyBio Food" className="h-full w-full object-contain drop-shadow-2xl" />
+              <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground shadow-accent">
+                <Star className="h-3 w-3 fill-current" /> Produit phare
+              </span>
+            </Link>
           </div>
         </div>
       </section>
+
+      {/* FEATURED PRODUCT SPOTLIGHT */}
+      {data.featured ? (
+        <section className="container mx-auto px-4 py-12 md:py-16">
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-elevated">
+            <div className="grid gap-0 md:grid-cols-2">
+              <div className="relative flex items-center justify-center bg-gradient-to-br from-accent/20 via-background to-teal/10 p-8 md:p-12">
+                <span className="absolute left-6 top-6 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground shadow-accent">
+                  <Star className="h-3 w-3 fill-current" /> Produit phare
+                </span>
+                <img src={cacaoAsset.url} alt={data.featured.name} className="max-h-[420px] w-auto object-contain drop-shadow-2xl" />
+              </div>
+              <div className="flex flex-col justify-center p-8 md:p-12">
+                <span className="text-xs font-semibold uppercase tracking-wider text-accent">MyBio Food · Édition limitée</span>
+                <h2 className="mt-3 font-display text-3xl font-bold leading-tight md:text-4xl">
+                  Cacao brut à la <span className="text-accent">cannelle de Ceylan</span>
+                </h2>
+                <p className="mt-3 text-base text-foreground/80">
+                  {data.featured.short_description ?? "Une poudre 100% naturelle, riche en antioxydants, pour un cacao chaud onctueux et plein de bienfaits."}
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {(data.featured.benefits && data.featured.benefits.length > 0
+                    ? data.featured.benefits.slice(0, 4)
+                    : ["100% naturel et bio", "Riche en antioxydants", "Cannelle de Ceylan authentique", "Sans sucre ajouté"]
+                  ).map((b: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 flex items-baseline gap-3">
+                  <span className="font-display text-3xl font-bold text-primary">{formatCFA(Number(data.featured.promo_price ?? data.featured.price))}</span>
+                  {data.featured.promo_price ? (
+                    <span className="text-base text-muted-foreground line-through">{formatCFA(Number(data.featured.price))}</span>
+                  ) : null}
+                </div>
+                <Link to="/produit/$slug" params={{ slug: data.featured.slug }} className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent transition hover:scale-105">
+                  Commander maintenant <ArrowRight className="h-4 w-4" />
+                </Link>
+                <p className="mt-3 text-xs text-success">💵 Paiement à la livraison disponible</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* CATEGORIES */}
       <section className="container mx-auto px-4 py-12 md:py-16">
