@@ -11,11 +11,12 @@ const FEATURED_SLUG = "cacaocelyan";
 const homeQuery = queryOptions({
   queryKey: ["home"],
   queryFn: async () => {
-    const [{ data: products }, { data: categories }] = await Promise.all([
+    const [{ data: products }, { data: categories }, { data: featured }] = await Promise.all([
       supabase.from("products").select("id,name,slug,price,promo_price,images,short_description,is_popular").eq("is_active", true).order("is_popular", { ascending: false }).limit(8),
       supabase.from("categories").select("id,name,slug,description").order("sort_order").limit(6),
+      supabase.from("products").select("id,name,slug,price,promo_price,short_description,benefits").eq("slug", FEATURED_SLUG).eq("is_active", true).maybeSingle(),
     ]);
-    return { products: products ?? [], categories: categories ?? [] };
+    return { products: products ?? [], categories: categories ?? [], featured: featured ?? null };
   },
 });
 
