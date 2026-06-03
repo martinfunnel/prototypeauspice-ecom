@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, Truck, ShieldCheck, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, Phone, Sparkles, Check, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
+import { formatCFA } from "@/lib/format";
+import cacaoAsset from "@/assets/cacao-cannelle-ceylan.jpeg.asset.json";
+
+const FEATURED_SLUG = "cacaocelyan";
 
 const homeQuery = queryOptions({
   queryKey: ["home"],
