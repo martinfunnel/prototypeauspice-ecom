@@ -36,33 +36,35 @@ function Home() {
         <div className="container relative mx-auto grid gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div className="flex flex-col justify-center">
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5 text-accent" /> Livraison Abidjan & toute la Côte d'Ivoire
+              <Sparkles className="h-3.5 w-3.5 text-accent" /> Auspice SARL · Bio & livraison Côte d'Ivoire
             </span>
             <h1 className="mt-5 font-display text-4xl font-bold leading-tight md:text-6xl">
-              Votre santé,<br /><span className="text-accent">livrée à domicile.</span>
+              Le bien-être bio,<br /><span className="text-accent">enraciné dans la nature.</span>
             </h1>
             <p className="mt-4 max-w-lg text-base text-primary-foreground/80 md:text-lg">
-              Compléments alimentaires, vitamines et soins authentiques. Payez à la livraison, partout en Côte d'Ivoire.
+              Auspice Market vous propose des compléments alimentaires et produits de santé
+              100% issus de l'agriculture biologique. Découvrez notre best-seller&nbsp;:
+              le <strong className="text-accent">cacao à la cannelle de Ceylan</strong>.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/catalogue" className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground shadow-accent transition hover:scale-105">
-                Découvrir les produits <ArrowRight className="h-4 w-4" />
+              <Link to="/produit/$slug" params={{ slug: FEATURED_SLUG }} className="inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground shadow-accent transition hover:scale-105">
+                Découvrir le cacao Ceylan <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/suivi" className="inline-flex items-center gap-2 rounded-xl border border-primary-foreground/30 px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10">
-                Suivre ma commande
+              <Link to="/catalogue" className="inline-flex items-center gap-2 rounded-xl border border-primary-foreground/30 px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10">
+                Voir la boutique
               </Link>
             </div>
             <div className="mt-8 grid grid-cols-3 gap-3 text-xs">
               <div className="flex items-center gap-2 text-primary-foreground/80"><Truck className="h-4 w-4 text-accent" />Livraison 24-48h</div>
-              <div className="flex items-center gap-2 text-primary-foreground/80"><Phone className="h-4 w-4 text-accent" />Paiement livraison</div>
-              <div className="flex items-center gap-2 text-primary-foreground/80"><ShieldCheck className="h-4 w-4 text-accent" />100% authentique</div>
+              <div className="flex items-center gap-2 text-primary-foreground/80"><Phone className="h-4 w-4 text-accent" />Paiement à la livraison</div>
+              <div className="flex items-center gap-2 text-primary-foreground/80"><ShieldCheck className="h-4 w-4 text-accent" />Certifié bio</div>
             </div>
           </div>
           <div className="relative hidden md:block">
             <Link to="/produit/$slug" params={{ slug: FEATURED_SLUG }} className="group relative mx-auto block aspect-square w-full max-w-md rounded-3xl bg-gradient-to-br from-accent/40 to-teal/30 p-6 shadow-elevated transition hover:scale-[1.02]">
-              <img src={cacaoAsset.url} alt="Poudre de cacao brute à la cannelle de Ceylan — MyBio Food" className="h-full w-full object-contain drop-shadow-2xl" />
+              <img src={cacaoAsset.url} alt="Cacao brut à la cannelle de Ceylan — Auspice Market" className="h-full w-full object-contain drop-shadow-2xl" />
               <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground shadow-accent">
-                <Star className="h-3 w-3 fill-current" /> Produit phare
+                <Star className="h-3 w-3 fill-current" /> Best-seller bio
               </span>
             </Link>
           </div>
@@ -81,7 +83,7 @@ function Home() {
                 <img src={cacaoAsset.url} alt={data.featured.name} className="max-h-[420px] w-auto object-contain drop-shadow-2xl" />
               </div>
               <div className="flex flex-col justify-center p-8 md:p-12">
-                <span className="text-xs font-semibold uppercase tracking-wider text-accent">MyBio Food · Édition limitée</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-accent">Auspice Market · Best-seller bio</span>
                 <h2 className="mt-3 font-display text-3xl font-bold leading-tight md:text-4xl">
                   Cacao brut à la <span className="text-accent">cannelle de Ceylan</span>
                 </h2>
@@ -136,8 +138,8 @@ function Home() {
       <section className="container mx-auto px-4 pb-16">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h2 className="font-display text-2xl font-bold md:text-3xl">Produits populaires</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Sélectionnés pour leur qualité.</p>
+            <h2 className="font-display text-2xl font-bold md:text-3xl">Nos produits bio populaires</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Sélectionnés par Auspice SARL pour leur pureté et leur efficacité.</p>
           </div>
           <Link to="/catalogue" className="text-sm font-semibold text-accent hover:underline">Tout voir →</Link>
         </div>
@@ -159,10 +161,10 @@ function Home() {
           <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
             <div>
               <h3 className="font-display text-3xl font-bold">Commandez en 2 minutes</h3>
-              <p className="mt-2 max-w-xl text-accent-foreground/90">Pas de carte bancaire requise. Vous payez le livreur en espèces à la réception.</p>
+              <p className="mt-2 max-w-xl text-accent-foreground/90">Pas de carte bancaire. Vous payez le livreur en espèces à la réception, partout en Côte d'Ivoire.</p>
             </div>
-            <Link to="/catalogue" className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:opacity-90">
-              Commencer <ArrowRight className="h-4 w-4" />
+            <Link to="/produit/$slug" params={{ slug: FEATURED_SLUG }} className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:opacity-90">
+              Commander le cacao Ceylan <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>

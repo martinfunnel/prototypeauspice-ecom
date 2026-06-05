@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ShoppingCart, Search, Package, Menu, X, LogIn } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
+import logoAsset from "@/assets/auspice-logo.png.asset.json";
 
 export function SiteHeader() {
   const { itemCount } = useCart();
@@ -9,7 +10,7 @@ export function SiteHeader() {
 
   const nav = [
     { to: "/", label: "Accueil" },
-    { to: "/catalogue", label: "Catalogue" },
+    { to: "/catalogue", label: "Boutique" },
     { to: "/suivi", label: "Mes commandes" },
   ];
 
@@ -17,13 +18,11 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-lg gradient-hero text-primary-foreground font-display font-bold">
-            S
-          </div>
+          <img src={logoAsset.url} alt="Auspice Market — Bien-être bio" className="h-10 w-10 object-contain" />
           <div className="flex flex-col leading-tight">
-            <span className="font-display text-base font-bold">Santé Ivoire</span>
+            <span className="font-display text-base font-bold">Auspice Market</span>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Bien-être 100% naturel
+              Santé & bien-être bio
             </span>
           </div>
         </Link>
