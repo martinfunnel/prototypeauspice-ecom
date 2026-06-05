@@ -169,21 +169,6 @@ function Home() {
           </div>
         </div>
       </section>
-
-      {/* CTA */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="overflow-hidden rounded-3xl gradient-accent p-10 text-accent-foreground shadow-accent md:p-14">
-          <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
-            <div>
-              <h3 className="font-display text-3xl font-bold">Commandez en 2 minutes</h3>
-              <p className="mt-2 max-w-xl text-accent-foreground/90">Pas de carte bancaire requise. Vous payez le livreur en espèces à la réception.</p>
-            </div>
-            <Link to="/catalogue" className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:opacity-90">
-              Commencer <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
     </>
   );
 }
