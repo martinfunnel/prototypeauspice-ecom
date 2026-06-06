@@ -33,6 +33,8 @@ function Catalog() {
   });
   return (
     <section className="container mx-auto px-4 py-10">
+      {data.banner ? <PromoBanner banner={data.banner} /> : null}
+
       <h1 className="font-display text-3xl font-bold md:text-4xl">Catalogue</h1>
       <p className="mt-2 text-muted-foreground">{filtered.length} produit(s)</p>
 
