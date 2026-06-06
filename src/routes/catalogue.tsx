@@ -63,3 +63,46 @@ function Catalog() {
     </section>
   );
 }
+
+type Banner = {
+  title: string | null;
+  subtitle: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+  image_url: string | null;
+};
+
+function PromoBanner({ banner }: { banner: Banner }) {
+  const style = banner.image_url
+    ? {
+        backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.1) 100%), url(${banner.image_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : undefined;
+  const inner = (
+    <div
+      className="relative flex min-h-[180px] flex-col justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary to-accent/80 p-6 text-primary-foreground shadow-card md:min-h-[220px] md:p-10"
+      style={style}
+    >
+      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-accent/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
+        Offre spéciale
+      </span>
+      {banner.title ? <h2 className="font-display text-2xl font-bold md:text-4xl">{banner.title}</h2> : null}
+      {banner.subtitle ? <p className="max-w-2xl text-sm opacity-95 md:text-base">{banner.subtitle}</p> : null}
+      {banner.cta_label ? (
+        <span className="mt-2 inline-flex w-fit items-center rounded-full bg-background px-5 py-2 text-sm font-bold text-primary shadow">
+          {banner.cta_label} →
+        </span>
+      ) : null}
+    </div>
+  );
+  if (banner.cta_url) {
+    return (
+      <Link to={banner.cta_url} className="mb-8 block">
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="mb-8">{inner}</div>;
+}
