@@ -99,9 +99,9 @@ function PromoBanner({ banner }: { banner: Banner }) {
   );
   if (banner.cta_url) {
     return (
-      <Link to={banner.cta_url} className="mb-8 block">
+      <a href={banner.cta_url} className="mb-8 block">
         {inner}
-      </Link>
+      </a>
     );
   }
   return <div className="mb-8">{inner}</div>;
