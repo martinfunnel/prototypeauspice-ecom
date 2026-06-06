@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +7,12 @@ import { ProductCard } from "@/components/ProductCard";
 const catalogQuery = queryOptions({
   queryKey: ["catalog"],
   queryFn: async () => {
-    const [{ data: products }, { data: categories }] = await Promise.all([
+    const [{ data: products }, { data: categories }, { data: banner }] = await Promise.all([
       supabase.from("products").select("id,name,slug,price,promo_price,images,short_description,is_popular,category_id").eq("is_active", true).order("created_at", { ascending: false }),
       supabase.from("categories").select("id,name,slug").order("sort_order"),
+      supabase.from("promo_banners").select("title,subtitle,cta_label,cta_url,image_url,is_active").eq("key", "catalogue").eq("is_active", true).maybeSingle(),
     ]);
-    return { products: products ?? [], categories: categories ?? [] };
+    return { products: products ?? [], categories: categories ?? [], banner: banner ?? null };
   },
 });
 
