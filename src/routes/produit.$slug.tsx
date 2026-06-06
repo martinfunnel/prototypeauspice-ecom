@@ -136,6 +136,13 @@ function ProductPage() {
               <button type="button" onClick={() => setQty(qty + 1)} className="grid h-11 w-11 place-items-center hover:bg-muted"><Plus className="h-4 w-4" /></button>
             </div>
           </div>
+
+          <div className="mt-6 border-t border-border pt-5">
+            <ShareButtons
+              url={typeof window !== "undefined" ? window.location.href : `https://prototypeauspice-ecom.lovable.app/produit/${p.slug}`}
+              title={p.name}
+            />
+          </div>
         </div>
       </div>
 
