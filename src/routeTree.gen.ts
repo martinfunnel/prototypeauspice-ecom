@@ -16,10 +16,12 @@ import { Route as CatalogueRouteImport } from './routes/catalogue'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProduitSlugRouteImport } from './routes/produit.$slug'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminCommunesRouteImport } from './routes/admin.communes'
+import { Route as AdminBannerRouteImport } from './routes/admin.banner'
 
 const SuiviRoute = SuiviRouteImport.update({
   id: '/suivi',
@@ -56,6 +58,11 @@ const ProduitSlugRoute = ProduitSlugRouteImport.update({
   path: '/produit/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/admin/products',
   path: '/admin/products',
@@ -76,6 +83,11 @@ const AdminCommunesRoute = AdminCommunesRouteImport.update({
   path: '/admin/communes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBannerRoute = AdminBannerRouteImport.update({
+  id: '/admin/banner',
+  path: '/admin/banner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,10 +95,12 @@ export interface FileRoutesByFullPath {
   '/commande': typeof CommandeRoute
   '/panier': typeof PanierRoute
   '/suivi': typeof SuiviRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/communes': typeof AdminCommunesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/produit/$slug': typeof ProduitSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -96,10 +110,12 @@ export interface FileRoutesByTo {
   '/commande': typeof CommandeRoute
   '/panier': typeof PanierRoute
   '/suivi': typeof SuiviRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/communes': typeof AdminCommunesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/produit/$slug': typeof ProduitSlugRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -110,10 +126,12 @@ export interface FileRoutesById {
   '/commande': typeof CommandeRoute
   '/panier': typeof PanierRoute
   '/suivi': typeof SuiviRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/communes': typeof AdminCommunesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/produit/$slug': typeof ProduitSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -125,10 +143,12 @@ export interface FileRouteTypes {
     | '/commande'
     | '/panier'
     | '/suivi'
+    | '/admin/banner'
     | '/admin/communes'
     | '/admin/login'
     | '/admin/orders'
     | '/admin/products'
+    | '/admin/users'
     | '/produit/$slug'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -138,10 +158,12 @@ export interface FileRouteTypes {
     | '/commande'
     | '/panier'
     | '/suivi'
+    | '/admin/banner'
     | '/admin/communes'
     | '/admin/login'
     | '/admin/orders'
     | '/admin/products'
+    | '/admin/users'
     | '/produit/$slug'
     | '/admin'
   id:
@@ -151,10 +173,12 @@ export interface FileRouteTypes {
     | '/commande'
     | '/panier'
     | '/suivi'
+    | '/admin/banner'
     | '/admin/communes'
     | '/admin/login'
     | '/admin/orders'
     | '/admin/products'
+    | '/admin/users'
     | '/produit/$slug'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -165,10 +189,12 @@ export interface RootRouteChildren {
   CommandeRoute: typeof CommandeRoute
   PanierRoute: typeof PanierRoute
   SuiviRoute: typeof SuiviRoute
+  AdminBannerRoute: typeof AdminBannerRoute
   AdminCommunesRoute: typeof AdminCommunesRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminProductsRoute: typeof AdminProductsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   ProduitSlugRoute: typeof ProduitSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -224,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProduitSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/products': {
       id: '/admin/products'
       path: '/admin/products'
@@ -252,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCommunesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/banner': {
+      id: '/admin/banner'
+      path: '/admin/banner'
+      fullPath: '/admin/banner'
+      preLoaderRoute: typeof AdminBannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -261,10 +301,12 @@ const rootRouteChildren: RootRouteChildren = {
   CommandeRoute: CommandeRoute,
   PanierRoute: PanierRoute,
   SuiviRoute: SuiviRoute,
+  AdminBannerRoute: AdminBannerRoute,
   AdminCommunesRoute: AdminCommunesRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminProductsRoute: AdminProductsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   ProduitSlugRoute: ProduitSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

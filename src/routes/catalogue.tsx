@@ -7,11 +7,12 @@ import { ProductCard } from "@/components/ProductCard";
 const catalogQuery = queryOptions({
   queryKey: ["catalog"],
   queryFn: async () => {
-    const [{ data: products }, { data: categories }] = await Promise.all([
+    const [{ data: products }, { data: categories }, { data: banner }] = await Promise.all([
       supabase.from("products").select("id,name,slug,price,promo_price,images,short_description,is_popular,category_id").eq("is_active", true).order("created_at", { ascending: false }),
       supabase.from("categories").select("id,name,slug").order("sort_order"),
+      supabase.from("promo_banners").select("title,subtitle,cta_label,cta_url,image_url,is_active").eq("key", "catalogue").eq("is_active", true).maybeSingle(),
     ]);
-    return { products: products ?? [], categories: categories ?? [] };
+    return { products: products ?? [], categories: categories ?? [], banner: banner ?? null };
   },
 });
 
@@ -32,6 +33,8 @@ function Catalog() {
   });
   return (
     <section className="container mx-auto px-4 py-10">
+      {data.banner ? <PromoBanner banner={data.banner} /> : null}
+
       <h1 className="font-display text-3xl font-bold md:text-4xl">Catalogue</h1>
       <p className="mt-2 text-muted-foreground">{filtered.length} produit(s)</p>
 
@@ -59,4 +62,47 @@ function Catalog() {
       )}
     </section>
   );
+}
+
+type Banner = {
+  title: string | null;
+  subtitle: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+  image_url: string | null;
+};
+
+function PromoBanner({ banner }: { banner: Banner }) {
+  const style = banner.image_url
+    ? {
+        backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.1) 100%), url(${banner.image_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : undefined;
+  const inner = (
+    <div
+      className="relative flex min-h-[180px] flex-col justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary to-accent/80 p-6 text-primary-foreground shadow-card md:min-h-[220px] md:p-10"
+      style={style}
+    >
+      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-accent/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
+        Offre spéciale
+      </span>
+      {banner.title ? <h2 className="font-display text-2xl font-bold md:text-4xl">{banner.title}</h2> : null}
+      {banner.subtitle ? <p className="max-w-2xl text-sm opacity-95 md:text-base">{banner.subtitle}</p> : null}
+      {banner.cta_label ? (
+        <span className="mt-2 inline-flex w-fit items-center rounded-full bg-background px-5 py-2 text-sm font-bold text-primary shadow">
+          {banner.cta_label} →
+        </span>
+      ) : null}
+    </div>
+  );
+  if (banner.cta_url) {
+    return (
+      <a href={banner.cta_url} className="mb-8 block">
+        {inner}
+      </a>
+    );
+  }
+  return <div className="mb-8">{inner}</div>;
 }

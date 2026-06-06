@@ -286,6 +286,96 @@ export const uploadProductImage = createServerFn({ method: "POST" })
     return { url: urlData.publicUrl };
   });
 
+// ---------- Promo Banners ----------
+export const getPromoBanner = createServerFn({ method: "GET" })
+  .inputValidator((i: unknown) => z.object({ key: z.string().min(1).max(50) }).parse(i))
+  .handler(async ({ data }) => {
+    const { data: row } = await supabaseAdmin
+      .from("promo_banners")
+      .select("*")
+      .eq("key", data.key)
+      .maybeSingle();
+    return row;
+  });
+
+const BannerSchema = z.object({
+  key: z.string().trim().min(1).max(50),
+  title: z.string().trim().max(200).nullable().optional(),
+  subtitle: z.string().trim().max(500).nullable().optional(),
+  cta_label: z.string().trim().max(50).nullable().optional(),
+  cta_url: z.string().trim().max(500).nullable().optional(),
+  image_url: z.string().trim().max(1000).nullable().optional(),
+  is_active: z.boolean(),
+});
+
+export const upsertPromoBanner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => BannerSchema.parse(i))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("promo_banners")
+      .upsert({ ...data }, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- User Roles Management ----------
+const ManagedRole = z.enum(["admin", "vendeur", "comptable"]);
+
+export const listUsersWithRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data: users, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+    if (error) throw new Error(error.message);
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
+    const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name");
+    const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+    return users.users.map((u) => ({
+      id: u.id,
+      email: u.email ?? "",
+      full_name: profileMap.get(u.id) ?? "",
+      created_at: u.created_at,
+      roles: (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as string),
+    }));
+  });
+
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({
+      user_id: z.string().uuid(),
+      role: ManagedRole,
+      grant: z.boolean(),
+    }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    if (data.grant) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: data.user_id, role: data.role }, { onConflict: "user_id,role" });
+      if (error) throw new Error(error.message);
+    } else {
+      // prevent removing last admin
+      if (data.role === "admin") {
+        const { count } = await supabaseAdmin
+          .from("user_roles")
+          .select("id", { count: "exact", head: true })
+          .eq("role", "admin");
+        if ((count ?? 0) <= 1) throw new Error("Impossible de retirer le dernier administrateur");
+      }
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.user_id)
+        .eq("role", data.role);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 // ---------- Self-promote (bootstrap first admin) ----------
 export const claimFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
