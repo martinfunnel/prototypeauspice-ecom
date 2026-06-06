@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, type ReactNode } from "react";
-import { LayoutDashboard, Package, ShoppingBag, MapPin, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, MapPin, LogOut, ShieldCheck, Megaphone, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { checkIsAdmin, claimFirstAdmin } from "@/lib/admin.functions";
@@ -11,7 +11,9 @@ const NAV: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exac
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/orders", label: "Commandes", icon: ShoppingBag },
   { to: "/admin/products", label: "Produits", icon: Package },
+  { to: "/admin/banner", label: "Bannière", icon: Megaphone },
   { to: "/admin/communes", label: "Communes", icon: MapPin },
+  { to: "/admin/users", label: "Utilisateurs", icon: Users },
 ];
 
 export function AdminShell({ children, title }: { children: ReactNode; title: string }) {
