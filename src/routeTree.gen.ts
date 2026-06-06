@@ -20,6 +20,7 @@ import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminCommunesRouteImport } from './routes/admin.communes'
+import { Route as AdminBannerRouteImport } from './routes/admin.banner'
 
 const SuiviRoute = SuiviRouteImport.update({
   id: '/suivi',
@@ -76,6 +77,11 @@ const AdminCommunesRoute = AdminCommunesRouteImport.update({
   path: '/admin/communes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBannerRoute = AdminBannerRouteImport.update({
+  id: '/admin/banner',
+  path: '/admin/banner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/commande': typeof CommandeRoute
   '/panier': typeof PanierRoute
   '/suivi': typeof SuiviRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/communes': typeof AdminCommunesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/commande': typeof CommandeRoute
   '/panier': typeof PanierRoute
   '/suivi': typeof SuiviRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/communes': typeof AdminCommunesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/commande': typeof CommandeRoute
   '/panier': typeof PanierRoute
   '/suivi': typeof SuiviRoute
+  '/admin/banner': typeof AdminBannerRoute
   '/admin/communes': typeof AdminCommunesRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/commande'
     | '/panier'
     | '/suivi'
+    | '/admin/banner'
     | '/admin/communes'
     | '/admin/login'
     | '/admin/orders'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/commande'
     | '/panier'
     | '/suivi'
+    | '/admin/banner'
     | '/admin/communes'
     | '/admin/login'
     | '/admin/orders'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/commande'
     | '/panier'
     | '/suivi'
+    | '/admin/banner'
     | '/admin/communes'
     | '/admin/login'
     | '/admin/orders'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   CommandeRoute: typeof CommandeRoute
   PanierRoute: typeof PanierRoute
   SuiviRoute: typeof SuiviRoute
+  AdminBannerRoute: typeof AdminBannerRoute
   AdminCommunesRoute: typeof AdminCommunesRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCommunesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/banner': {
+      id: '/admin/banner'
+      path: '/admin/banner'
+      fullPath: '/admin/banner'
+      preLoaderRoute: typeof AdminBannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommandeRoute: CommandeRoute,
   PanierRoute: PanierRoute,
   SuiviRoute: SuiviRoute,
+  AdminBannerRoute: AdminBannerRoute,
   AdminCommunesRoute: AdminCommunesRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminOrdersRoute: AdminOrdersRoute,
@@ -271,3 +292,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
