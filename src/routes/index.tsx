@@ -156,6 +156,9 @@ function Home() {
         )}
       </section>
 
+      {/* TESTIMONIALS */}
+      <TestimonialsCarousel />
+
       {/* CTA */}
       <section className="container mx-auto px-4 pb-16">
         <div className="overflow-hidden rounded-3xl gradient-accent p-10 text-accent-foreground shadow-accent md:p-14">
