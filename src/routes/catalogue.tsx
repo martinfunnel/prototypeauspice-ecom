@@ -61,6 +61,8 @@ function Catalog() {
           {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       )}
+
+      <TestimonialsCarousel />
     </section>
   );
 }
