@@ -10,6 +10,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { createOrder } from "@/lib/orders.functions";
 import { notifyAdminInNewTab } from "@/lib/whatsapp";
 import { ShareButtons } from "@/components/ShareButtons";
+import { TestimonialsCarousel } from "@/components/TestimonialsCarousel";
 
 const productQuery = (slug: string) =>
   queryOptions({
