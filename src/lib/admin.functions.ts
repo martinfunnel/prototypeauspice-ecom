@@ -408,3 +408,101 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
       .eq("role", "admin");
     return { isAdmin: !!data, anyAdmin: (count ?? 0) > 0 };
   });
+
+// ---------- Testimonials ----------
+const TestimonialSchema = z.object({
+  id: z.string().uuid().optional().nullable(),
+  author_name: z.string().trim().min(1).max(120),
+  role: z.string().trim().max(120).nullable().optional(),
+  content: z.string().trim().min(1).max(2000),
+  rating: z.number().int().min(1).max(5),
+  media_url: z.string().trim().max(1000).nullable().optional(),
+  media_type: z.enum(["image", "video"]),
+  is_active: z.boolean(),
+  sort_order: z.number().int().min(0).max(10000),
+});
+
+export const listTestimonialsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data, error } = await supabaseAdmin
+      .from("testimonials")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const upsertTestimonial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => TestimonialSchema.parse(i))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const payload = {
+      author_name: data.author_name,
+      role: data.role ?? null,
+      content: data.content,
+      rating: data.rating,
+      media_url: data.media_url ?? null,
+      media_type: data.media_type,
+      is_active: data.is_active,
+      sort_order: data.sort_order,
+    };
+    if (data.id) {
+      const { error } = await supabaseAdmin.from("testimonials").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: row, error } = await supabaseAdmin
+      .from("testimonials")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: row.id };
+  });
+
+export const deleteTestimonial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin.from("testimonials").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const MEDIA_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+};
+
+export const uploadTestimonialMedia = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({
+      base64: z.string().max(40_000_000),
+      ext: z.enum(["jpg", "png", "webp", "mp4", "webm", "mov"]),
+    }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const base64Data = data.base64.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    const filename = `testimonials/${crypto.randomUUID()}.${data.ext}`;
+    const contentType = MEDIA_MIME[data.ext];
+    const { data: uploadData, error } = await supabaseAdmin.storage
+      .from("product-images")
+      .upload(filename, buffer, { contentType });
+    if (error) throw new Error(error.message);
+    const { data: urlData } = supabaseAdmin.storage
+      .from("product-images")
+      .getPublicUrl(uploadData.path);
+    return { url: urlData.publicUrl };
+  });
