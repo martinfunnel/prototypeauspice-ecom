@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
+import { TestimonialsCarousel } from "@/components/TestimonialsCarousel";
 
 const catalogQuery = queryOptions({
   queryKey: ["catalog"],
@@ -60,6 +61,8 @@ function Catalog() {
           {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       )}
+
+      <TestimonialsCarousel />
     </section>
   );
 }
