@@ -261,6 +261,8 @@ function ProductPage() {
         );
       })()}
 
+      <TestimonialsCarousel heading="Ce que disent nos clients" subheading="Avis vérifiés de la communauté Auspice Market." />
+
       {data.similar.length > 0 ? (
         <div className="mt-16">
           <h2 className="font-display text-2xl font-bold">Produits similaires</h2>
