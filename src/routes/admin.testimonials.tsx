@@ -281,7 +281,7 @@ function AdminTestimonials() {
                 <button
                   type="button"
                   onClick={save}
-                  disabled={saving || !editing.author_name.trim() || !editing.content.trim()}
+                  disabled={saving || !editing.media_url}
                   className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" /> {saving ? "Enregistrement…" : "Enregistrer"}
