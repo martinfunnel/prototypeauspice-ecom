@@ -220,19 +220,6 @@ function AdminTestimonials() {
             </div>
 
             <div className="grid gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Nom de l'auteur">
-                  <input className={inputCls} value={editing.author_name} onChange={(e) => setEditing({ ...editing, author_name: e.target.value })} />
-                </Field>
-                <Field label="Rôle / ville (optionnel)">
-                  <input className={inputCls} value={editing.role ?? ""} onChange={(e) => setEditing({ ...editing, role: e.target.value })} placeholder="Cliente · Abidjan" />
-                </Field>
-              </div>
-
-              <Field label="Témoignage">
-                <textarea rows={4} className={inputCls} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
-              </Field>
-
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Note (1-5)">
                   <input type="number" min={1} max={5} className={inputCls} value={editing.rating} onChange={(e) => setEditing({ ...editing, rating: Math.max(1, Math.min(5, Number(e.target.value) || 5)) })} />
