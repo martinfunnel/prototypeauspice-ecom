@@ -412,9 +412,9 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
 // ---------- Testimonials ----------
 const TestimonialSchema = z.object({
   id: z.string().uuid().optional().nullable(),
-  author_name: z.string().trim().min(1).max(120),
+  author_name: z.string().trim().max(120).nullable().optional(),
   role: z.string().trim().max(120).nullable().optional(),
-  content: z.string().trim().min(1).max(2000),
+  content: z.string().trim().max(2000).nullable().optional(),
   rating: z.number().int().min(1).max(5),
   media_url: z.string().trim().max(1000).nullable().optional(),
   media_type: z.enum(["image", "video"]),
@@ -441,9 +441,9 @@ export const upsertTestimonial = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context.userId);
     const payload = {
-      author_name: data.author_name,
+      author_name: data.author_name?.trim() || "—",
       role: data.role ?? null,
-      content: data.content,
+      content: data.content?.trim() || "",
       rating: data.rating,
       media_url: data.media_url ?? null,
       media_type: data.media_type,
