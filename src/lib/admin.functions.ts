@@ -412,9 +412,9 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
 // ---------- Testimonials ----------
 const TestimonialSchema = z.object({
   id: z.string().uuid().optional().nullable(),
-  author_name: z.string().trim().min(1).max(120),
+  author_name: z.string().trim().max(120).nullable().optional(),
   role: z.string().trim().max(120).nullable().optional(),
-  content: z.string().trim().min(1).max(2000),
+  content: z.string().trim().max(2000).nullable().optional(),
   rating: z.number().int().min(1).max(5),
   media_url: z.string().trim().max(1000).nullable().optional(),
   media_type: z.enum(["image", "video"]),
