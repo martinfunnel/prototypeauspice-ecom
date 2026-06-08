@@ -441,9 +441,9 @@ export const upsertTestimonial = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context.userId);
     const payload = {
-      author_name: data.author_name,
+      author_name: data.author_name?.trim() || "—",
       role: data.role ?? null,
-      content: data.content,
+      content: data.content?.trim() || "",
       rating: data.rating,
       media_url: data.media_url ?? null,
       media_type: data.media_type,
