@@ -81,6 +81,12 @@ function AdminOrders() {
             </option>
           ))}
         </select>
+        <Link
+          to="/admin/orders/new"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
+          <Plus className="h-4 w-4" /> Nouvelle commande
+        </Link>
       </div>
 
       {isLoading ? (
