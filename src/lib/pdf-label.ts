@@ -24,11 +24,11 @@ export async function generateLabelPDF(order: LabelOrder): Promise<jsPDF> {
   pdf.rect(0, 0, 500, 60, "F");
   pdf.setTextColor(255);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(18);
-  pdf.text("SANTÉ IVOIRE", 20, 28);
-  pdf.setFontSize(10);
+  pdf.setFontSize(20);
+  pdf.text("AUSPICE MARKET", 20, 28);
+  pdf.setFontSize(9);
   pdf.setFont("helvetica", "normal");
-  pdf.text("Paiement à la livraison", 20, 46);
+  pdf.text("Auspice SARL · Compléments bio · Paiement à la livraison", 20, 46);
 
   pdf.setTextColor(255, 107, 107);
   pdf.setFont("helvetica", "bold");

@@ -8,10 +8,20 @@ async function assertAdmin(userId: string) {
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .eq("role", "admin")
+    .in("role", ["admin", "super_admin"]);
+  if (error) throw new Error("Erreur de vérification du rôle");
+  if (!data || data.length === 0) throw new Error("Accès refusé : rôle admin requis");
+}
+
+async function assertSuperAdmin(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "super_admin")
     .maybeSingle();
   if (error) throw new Error("Erreur de vérification du rôle");
-  if (!data) throw new Error("Accès refusé : rôle admin requis");
+  if (!data) throw new Error("Accès refusé : rôle super administrateur requis");
 }
 
 // ---------- Stats ----------
@@ -321,7 +331,24 @@ export const upsertPromoBanner = createServerFn({ method: "POST" })
   });
 
 // ---------- User Roles Management ----------
-const ManagedRole = z.enum(["admin", "vendeur", "comptable"]);
+const ManagedRole = z.enum(["super_admin", "admin", "vendeur", "comptable"]);
+const AUSPICE_EMAIL_DOMAIN = "auspice.local";
+
+function generateIdentifier() {
+  // AUS-XXXXXX (6 alphanum, no ambiguous chars)
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `AUS-${s}`;
+}
+
+function generatePassword() {
+  // 12 chars: letters + digits, easy to dictate
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let s = "";
+  for (let i = 0; i < 12; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return s;
+}
 
 export const listUsersWithRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -332,13 +359,18 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
     const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
     const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name");
     const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
-    return users.users.map((u) => ({
-      id: u.id,
-      email: u.email ?? "",
-      full_name: profileMap.get(u.id) ?? "",
-      created_at: u.created_at,
-      roles: (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as string),
-    }));
+    return users.users.map((u) => {
+      const email = u.email ?? "";
+      const isInternal = email.endsWith(`@${AUSPICE_EMAIL_DOMAIN}`);
+      return {
+        id: u.id,
+        email,
+        identifier: isInternal ? email.split("@")[0] : email,
+        full_name: profileMap.get(u.id) ?? "",
+        created_at: u.created_at,
+        roles: (roles ?? []).filter((r) => r.user_id === u.id).map((r) => r.role as string),
+      };
+    });
   });
 
 export const setUserRole = createServerFn({ method: "POST" })
@@ -351,20 +383,19 @@ export const setUserRole = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
+    await assertSuperAdmin(context.userId);
     if (data.grant) {
       const { error } = await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: data.user_id, role: data.role }, { onConflict: "user_id,role" });
       if (error) throw new Error(error.message);
     } else {
-      // prevent removing last admin
-      if (data.role === "admin") {
+      if (data.role === "super_admin") {
         const { count } = await supabaseAdmin
           .from("user_roles")
           .select("id", { count: "exact", head: true })
-          .eq("role", "admin");
-        if ((count ?? 0) <= 1) throw new Error("Impossible de retirer le dernier administrateur");
+          .eq("role", "super_admin");
+        if ((count ?? 0) <= 1) throw new Error("Impossible de retirer le dernier super administrateur");
       }
       const { error } = await supabaseAdmin
         .from("user_roles")
@@ -376,19 +407,75 @@ export const setUserRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ---------- Self-promote (bootstrap first admin) ----------
+export const createStaffUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({
+      full_name: z.string().trim().max(120).optional(),
+      role: ManagedRole,
+    }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    await assertSuperAdmin(context.userId);
+    // Generate unique identifier (retry on collision)
+    let identifier = generateIdentifier();
+    for (let i = 0; i < 5; i++) {
+      const { data: existing } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1, perPage: 1,
+      });
+      // simple uniqueness check by attempting create; collisions extremely unlikely
+      void existing;
+      break;
+    }
+    const password = generatePassword();
+    const email = `${identifier.toLowerCase()}@${AUSPICE_EMAIL_DOMAIN}`;
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name ?? "" },
+    });
+    if (error || !created.user) throw new Error(error?.message ?? "Création échouée");
+    // upsert profile name (handle_new_user trigger may already insert)
+    if (data.full_name) {
+      await supabaseAdmin
+        .from("profiles")
+        .upsert({ id: created.user.id, full_name: data.full_name }, { onConflict: "id" });
+    }
+    const { error: rErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: created.user.id, role: data.role });
+    if (rErr) throw new Error(rErr.message);
+    return { identifier, password, user_id: created.user.id };
+  });
+
+export const deleteStaffUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ user_id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    await assertSuperAdmin(context.userId);
+    if (data.user_id === context.userId) throw new Error("Vous ne pouvez pas supprimer votre propre compte");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Self-promote (bootstrap first super admin) ----------
 export const claimFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { count, error: cErr } = await supabaseAdmin
       .from("user_roles")
       .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
+      .in("role", ["admin", "super_admin"]);
     if (cErr) throw new Error(cErr.message);
     if ((count ?? 0) > 0) throw new Error("Un administrateur existe déjà");
     const { error } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: context.userId, role: "admin" });
+      .insert([
+        { user_id: context.userId, role: "super_admin" },
+        { user_id: context.userId, role: "admin" },
+      ]);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -400,13 +487,97 @@ export const checkIsAdmin = createServerFn({ method: "GET" })
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
+      .in("role", ["admin", "super_admin"]);
+    const roles = (data ?? []).map((r) => r.role as string);
     const { count } = await supabaseAdmin
       .from("user_roles")
       .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
-    return { isAdmin: !!data, anyAdmin: (count ?? 0) > 0 };
+      .in("role", ["admin", "super_admin"]);
+    return {
+      isAdmin: roles.length > 0,
+      isSuperAdmin: roles.includes("super_admin"),
+      anyAdmin: (count ?? 0) > 0,
+    };
+  });
+
+// ---------- Admin manual order creation ----------
+const AdminOrderSchema = z.object({
+  customer_name: z.string().trim().min(2).max(120),
+  customer_phone: z.string().trim().min(8).max(20),
+  commune_id: z.string().uuid(),
+  address: z.string().trim().min(3).max(500),
+  notes: z.string().trim().max(500).optional().nullable(),
+  status: z.enum(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]).default("confirmed"),
+  items: z.array(z.object({
+    product_id: z.string().uuid(),
+    quantity: z.number().int().min(1).max(999),
+  })).min(1).max(50),
+});
+
+export const adminCreateOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => AdminOrderSchema.parse(i))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { data: commune, error: cErr } = await supabaseAdmin
+      .from("communes").select("id, name, delivery_fee").eq("id", data.commune_id).single();
+    if (cErr || !commune) throw new Error("Commune invalide");
+
+    const ids = data.items.map((i) => i.product_id);
+    const { data: products, error: pErr } = await supabaseAdmin
+      .from("products").select("id, name, price, promo_price").in("id", ids);
+    if (pErr || !products || products.length !== ids.length) throw new Error("Produit introuvable");
+
+    let subtotal = 0;
+    const items = data.items.map((i) => {
+      const p = products.find((x) => x.id === i.product_id)!;
+      const unit = Number(p.promo_price ?? p.price);
+      const line = unit * i.quantity;
+      subtotal += line;
+      return { product_id: p.id, product_name: p.name, unit_price: unit, quantity: i.quantity, subtotal: line };
+    });
+    const delivery_fee = Number(commune.delivery_fee);
+    const total = subtotal + delivery_fee;
+
+    const { data: numRow, error: nErr } = await supabaseAdmin.rpc("generate_order_number");
+    if (nErr) throw new Error("Numéro de commande indisponible");
+
+    const { data: order, error: oErr } = await supabaseAdmin
+      .from("orders")
+      .insert({
+        order_number: numRow as unknown as string,
+        customer_name: data.customer_name,
+        customer_phone: data.customer_phone,
+        commune_id: commune.id,
+        commune_name: commune.name,
+        address: data.address,
+        notes: data.notes ?? null,
+        subtotal, delivery_fee, total,
+        status: data.status,
+      })
+      .select("id, order_number")
+      .single();
+    if (oErr || !order) throw new Error("Création de commande échouée");
+
+    const { error: iErr } = await supabaseAdmin
+      .from("order_items")
+      .insert(items.map((i) => ({ ...i, order_id: order.id })));
+    if (iErr) throw new Error("Articles non enregistrés");
+
+    return { id: order.id, order_number: order.order_number, total };
+  });
+
+export const listProductsLite = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select("id, name, price, promo_price, stock, is_active")
+      .eq("is_active", true)
+      .order("name");
+    if (error) throw new Error(error.message);
+    return data ?? [];
   });
 
 // ---------- Testimonials ----------

@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Printer, MessageCircle, Search } from "lucide-react";
+import { FileDown, Printer, MessageCircle, Search, Plus } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { listOrders, updateOrderStatus } from "@/lib/admin.functions";
 import { formatCFA, formatDateTime, ORDER_STATUS_LABELS } from "@/lib/format";
@@ -81,6 +81,12 @@ function AdminOrders() {
             </option>
           ))}
         </select>
+        <Link
+          to="/admin/orders/new"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
+          <Plus className="h-4 w-4" /> Nouvelle commande
+        </Link>
       </div>
 
       {isLoading ? (
