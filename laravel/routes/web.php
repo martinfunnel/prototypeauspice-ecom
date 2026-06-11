@@ -68,7 +68,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
 
     // Banners
     Route::middleware('can:view_banners')->get('/banners', [AdminController::class, 'banners'])->name('admin.banners');
-    Route::middleware('can:edit_banners')->patch('/banners/{id}', [AdminController::class, 'updateBanner']);
+    Route::middleware('can:edit_banners')->post('/banners', [AdminController::class, 'updateBanner']);
 
     // Users & Roles — Super Admin only
     Route::middleware('super_admin')->group(function () {

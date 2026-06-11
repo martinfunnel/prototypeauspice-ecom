@@ -313,14 +313,38 @@ class AdminController extends Controller
 
     public function banners()
     {
-        $banners = PromoBanner::all();
-        return view('admin.banners', compact('banners'));
+        $banner = PromoBanner::where('key', 'catalogue')->first();
+        return view('admin.banners', compact('banner'));
     }
 
-    public function updateBanner(Request $request, string $id)
+    public function updateBanner(Request $request)
     {
-        PromoBanner::findOrFail($id)->update($request->all());
-        return redirect('/admin/banners')->with('success', 'Bannière mise à jour');
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:200',
+            'subtitle' => 'nullable|string|max:500',
+            'cta_label' => 'nullable|string|max:50',
+            'cta_url' => 'nullable|string|max:500',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $data = [
+            'title' => $validated['title'] ?: null,
+            'subtitle' => $validated['subtitle'] ?: null,
+            'cta_label' => $validated['cta_label'] ?: null,
+            'cta_url' => $validated['cta_url'] ?: null,
+            'is_active' => $validated['is_active'] ?? false,
+        ];
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('banners', 'public');
+            $data['image_url'] = asset('storage/' . $path);
+        } elseif ($request->has('remove_image')) {
+            $data['image_url'] = null;
+        }
+
+        PromoBanner::updateOrCreate(['key' => 'catalogue'], $data);
+
+        return redirect('/admin/banners')->with('success', 'Bannière enregistrée');
     }
 
     public function destroyOrder(string $id)
