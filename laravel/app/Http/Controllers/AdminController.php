@@ -40,32 +40,100 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('stats', 'salesByDay'));
     }
 
-    public function products()
+    public function products(Request $request)
     {
-        $products = Product::with('category')->orderBy('name')->paginate(20);
-        $categories = Category::orderBy('name')->get();
-        return view('admin.products', compact('products', 'categories'));
+        $products = Product::with('category')->orderByDesc('created_at')->get();
+        $categories = Category::orderBy('sort_order')->get();
+        $editing = $request->has('edit') ? Product::find($request->edit) : null;
+        return view('admin.products', compact('products', 'categories', 'editing'));
     }
 
     public function storeProduct(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:products',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+        $validated = $request->validate([
+            'name' => 'required|string|max:200',
+            'slug' => 'nullable|string|max:200',
+            'short_description' => 'nullable|string|max:300',
+            'description' => 'nullable|string|max:5000',
+            'benefits' => 'nullable|string',
+            'price' => 'required|numeric|min:0|max:10000000',
+            'promo_price' => 'nullable|numeric|min:0|max:10000000',
+            'stock' => 'required|integer|min:0|max:100000',
             'category_id' => 'nullable|exists:categories,id',
+            'images' => 'nullable|string',
+            'detail_images' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+            'is_popular' => 'nullable|boolean',
         ]);
 
-        Product::create($request->all());
+        $data = $this->prepareProductData($validated);
+        $data['slug'] = $data['slug'] ?: \Illuminate\Support\Str::slug($data['name']);
+
+        Product::create($data);
         return redirect('/admin/products')->with('success', 'Produit créé');
     }
 
     public function updateProduct(Request $request, string $id)
     {
         $product = Product::findOrFail($id);
-        $product->update($request->all());
+        $validated = $request->validate([
+            'name' => 'required|string|max:200',
+            'slug' => 'nullable|string|max:200',
+            'short_description' => 'nullable|string|max:300',
+            'description' => 'nullable|string|max:5000',
+            'benefits' => 'nullable|string',
+            'price' => 'required|numeric|min:0|max:10000000',
+            'promo_price' => 'nullable|numeric|min:0|max:10000000',
+            'stock' => 'required|integer|min:0|max:100000',
+            'category_id' => 'nullable|exists:categories,id',
+            'images' => 'nullable|string',
+            'detail_images' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+            'is_popular' => 'nullable|boolean',
+        ]);
+
+        $data = $this->prepareProductData($validated);
+        $data['slug'] = $data['slug'] ?: \Illuminate\Support\Str::slug($data['name']);
+
+        $product->update($data);
         return redirect('/admin/products')->with('success', 'Produit mis à jour');
+    }
+
+    private function prepareProductData(array $validated): array
+    {
+        $benefits = collect(explode("\n", $validated['benefits'] ?? ''))
+            ->map(fn($s) => trim($s))
+            ->filter()
+            ->values()
+            ->all();
+
+        $images = collect(explode("\n", $validated['images'] ?? ''))
+            ->map(fn($s) => trim($s))
+            ->filter()
+            ->values()
+            ->all();
+
+        $detailImages = collect(explode("\n", $validated['detail_images'] ?? ''))
+            ->map(fn($s) => trim($s))
+            ->filter()
+            ->values()
+            ->all();
+
+        return [
+            'name' => $validated['name'],
+            'slug' => $validated['slug'] ?? null,
+            'short_description' => $validated['short_description'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'benefits' => $benefits,
+            'price' => $validated['price'],
+            'promo_price' => $validated['promo_price'] ?? null,
+            'stock' => $validated['stock'],
+            'category_id' => $validated['category_id'] ?? null,
+            'images' => $images,
+            'detail_images' => $detailImages,
+            'is_active' => $validated['is_active'] ?? true,
+            'is_popular' => $validated['is_popular'] ?? false,
+        ];
     }
 
     public function destroyProduct(string $id)

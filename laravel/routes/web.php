@@ -42,6 +42,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
     // Products
     Route::middleware('can:view_products')->get('/products', [AdminController::class, 'products'])->name('admin.products');
     Route::middleware('can:create_products')->post('/products', [AdminController::class, 'storeProduct']);
+    Route::middleware('can:edit_products')->patch('/products/{id}', [AdminController::class, 'updateProduct']);
     Route::middleware('can:delete_products')->delete('/products/{id}', [AdminController::class, 'destroyProduct']);
 
     // Categories
