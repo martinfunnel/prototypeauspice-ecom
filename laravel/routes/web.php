@@ -64,6 +64,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
     // Testimonials
     Route::middleware('can:view_testimonials')->get('/testimonials', [AdminController::class, 'testimonials'])->name('admin.testimonials');
     Route::middleware('can:create_testimonials')->post('/testimonials', [AdminController::class, 'storeTestimonial']);
+    Route::middleware('can:edit_testimonials')->patch('/testimonials/{id}', [AdminController::class, 'updateTestimonial']);
     Route::middleware('can:delete_testimonials')->delete('/testimonials/{id}', [AdminController::class, 'destroyTestimonial']);
 
     // Banners

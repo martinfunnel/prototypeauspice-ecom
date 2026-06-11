@@ -289,19 +289,54 @@ class AdminController extends Controller
 
     public function testimonials()
     {
-        $testimonials = Testimonial::orderBy('sort_order')->get();
+        $testimonials = Testimonial::orderBy('sort_order')->orderByDesc('created_at')->get();
         return view('admin.testimonials', compact('testimonials'));
+    }
+
+    private function prepareTestimonialData(Request $request): array
+    {
+        $validated = $request->validate([
+            'author_name' => 'required|string|max:120',
+            'role' => 'nullable|string|max:120',
+            'content' => 'required|string|max:2000',
+            'rating' => 'required|integer|min:1|max:5',
+            'media_type' => 'required|in:image,video',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'required|integer|min:0',
+        ]);
+
+        $data = [
+            'author_name' => $validated['author_name'],
+            'role' => $validated['role'] ?: null,
+            'content' => $validated['content'],
+            'rating' => $validated['rating'],
+            'media_type' => $validated['media_type'],
+            'is_active' => $validated['is_active'] ?? false,
+            'sort_order' => $validated['sort_order'],
+        ];
+
+        if ($request->hasFile('media')) {
+            $ext = $request->file('media')->getClientOriginalExtension();
+            $folder = $data['media_type'] === 'video' ? 'testimonials/videos' : 'testimonials/images';
+            $path = $request->file('media')->store($folder, 'public');
+            $data['media_url'] = asset('storage/' . $path);
+        } elseif ($request->has('remove_media')) {
+            $data['media_url'] = null;
+        }
+
+        return $data;
     }
 
     public function storeTestimonial(Request $request)
     {
-        Testimonial::create($request->all());
+        Testimonial::create($this->prepareTestimonialData($request));
         return redirect('/admin/testimonials')->with('success', 'Témoignage créé');
     }
 
     public function updateTestimonial(Request $request, string $id)
     {
-        Testimonial::findOrFail($id)->update($request->all());
+        $t = Testimonial::findOrFail($id);
+        $t->update($this->prepareTestimonialData($request));
         return redirect('/admin/testimonials')->with('success', 'Témoignage mis à jour');
     }
 
