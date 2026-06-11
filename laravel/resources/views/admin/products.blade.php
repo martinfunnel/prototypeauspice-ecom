@@ -156,15 +156,21 @@
             </select>
         </label>
 
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images du produit (URL, une par ligne)</span>
-            <textarea name="images" id="f-images" rows="3" placeholder="https://…&#10;https://…" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
+        {{-- Images du produit --}}
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images du produit (JPEG/PNG)</span>
+            <input type="file" name="product_images[]" id="f-product_images" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            <input type="hidden" name="existing_images" id="f-existing_images" value="">
+            <div id="preview-product-images" class="mt-3 flex flex-wrap gap-2"></div>
+        </div>
 
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images de la section « Détails » (URL, une par ligne)</span>
-            <textarea name="detail_images" id="f-detail_images" rows="3" placeholder="https://…&#10;https://…" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
+        {{-- Images détails --}}
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images de la section « Détails » (JPEG/PNG)</span>
+            <input type="file" name="detail_product_images[]" id="f-detail_product_images" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            <input type="hidden" name="existing_detail_images" id="f-existing_detail_images" value="">
+            <div id="preview-detail-images" class="mt-3 flex flex-wrap gap-2"></div>
+        </div>
 
         <div class="flex flex-wrap gap-4 pt-1">
             <label class="flex items-center gap-2 text-sm">
@@ -185,6 +191,27 @@
 </div>
 
 <script>
+function renderPreview(containerId, urls, inputId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    urls.forEach((url, idx) => {
+        if (!url) return;
+        const div = document.createElement('div');
+        div.className = 'relative';
+        div.innerHTML = `<img src="${url}" alt="" class="h-20 w-20 rounded-lg object-cover border border-border">
+            <button type="button" onclick="removeImage('${containerId}', ${idx}, '${inputId}')" class="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-destructive text-white text-xs font-bold">×</button>`;
+        container.appendChild(div);
+    });
+}
+
+function removeImage(containerId, idx, inputId) {
+    const input = document.getElementById(inputId);
+    let urls = input.value.split('\n').filter(u => u.trim());
+    urls.splice(idx, 1);
+    input.value = urls.join('\n');
+    renderPreview(containerId, urls, inputId);
+}
+
 function fillForm(data) {
     const form = document.getElementById('product-form');
     form.classList.remove('hidden');
@@ -201,8 +228,16 @@ function fillForm(data) {
     document.getElementById('f-promo_price').value = data.promo_price;
     document.getElementById('f-stock').value = data.stock;
     document.getElementById('f-category_id').value = data.category_id;
-    document.getElementById('f-images').value = data.images;
-    document.getElementById('f-detail_images').value = data.detail_images;
+
+    // Images existantes
+    const existingImages = data.images ? data.images.split('\n').filter(u => u.trim()) : [];
+    document.getElementById('f-existing_images').value = existingImages.join('\n');
+    renderPreview('preview-product-images', existingImages, 'f-existing_images');
+
+    const existingDetailImages = data.detail_images ? data.detail_images.split('\n').filter(u => u.trim()) : [];
+    document.getElementById('f-existing_detail_images').value = existingDetailImages.join('\n');
+    renderPreview('preview-detail-images', existingDetailImages, 'f-existing_detail_images');
+
     document.getElementById('f-is_active').checked = data.is_active;
     document.getElementById('f-is_popular').checked = data.is_popular;
 

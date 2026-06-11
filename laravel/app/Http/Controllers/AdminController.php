@@ -60,13 +60,11 @@ class AdminController extends Controller
             'promo_price' => 'nullable|numeric|min:0|max:10000000',
             'stock' => 'required|integer|min:0|max:100000',
             'category_id' => 'nullable|exists:categories,id',
-            'images' => 'nullable|string',
-            'detail_images' => 'nullable|string',
             'is_active' => 'nullable|boolean',
             'is_popular' => 'nullable|boolean',
         ]);
 
-        $data = $this->prepareProductData($validated);
+        $data = $this->prepareProductData($request, $validated);
         $data['slug'] = $data['slug'] ?: \Illuminate\Support\Str::slug($data['name']);
 
         Product::create($data);
@@ -86,20 +84,18 @@ class AdminController extends Controller
             'promo_price' => 'nullable|numeric|min:0|max:10000000',
             'stock' => 'required|integer|min:0|max:100000',
             'category_id' => 'nullable|exists:categories,id',
-            'images' => 'nullable|string',
-            'detail_images' => 'nullable|string',
             'is_active' => 'nullable|boolean',
             'is_popular' => 'nullable|boolean',
         ]);
 
-        $data = $this->prepareProductData($validated);
+        $data = $this->prepareProductData($request, $validated);
         $data['slug'] = $data['slug'] ?: \Illuminate\Support\Str::slug($data['name']);
 
         $product->update($data);
         return redirect('/admin/products')->with('success', 'Produit mis à jour');
     }
 
-    private function prepareProductData(array $validated): array
+    private function prepareProductData(Request $request, array $validated): array
     {
         $benefits = collect(explode("\n", $validated['benefits'] ?? ''))
             ->map(fn($s) => trim($s))
@@ -107,21 +103,26 @@ class AdminController extends Controller
             ->values()
             ->all();
 
-        $images = collect(explode("\n", $validated['images'] ?? ''))
+        // Images existantes
+        $existingImages = collect(explode("\n", $request->input('existing_images', '')))
             ->map(fn($s) => trim($s))
             ->filter()
             ->values()
             ->all();
 
-        $detailImages = collect(explode("\n", $validated['detail_images'] ?? ''))
+        $existingDetailImages = collect(explode("\n", $request->input('existing_detail_images', '')))
             ->map(fn($s) => trim($s))
             ->filter()
             ->values()
             ->all();
+
+        // Upload nouvelles images
+        $newImages = $this->uploadImages($request->file('product_images'));
+        $newDetailImages = $this->uploadImages($request->file('detail_product_images'));
 
         return [
             'name' => $validated['name'],
-            'slug' => $validated['slug'] ?? null,
+            'slug' => $validated['slug'] ?: \Illuminate\Support\Str::slug($validated['name']),
             'short_description' => $validated['short_description'] ?? null,
             'description' => $validated['description'] ?? null,
             'benefits' => $benefits,
@@ -129,11 +130,24 @@ class AdminController extends Controller
             'promo_price' => $validated['promo_price'] ?? null,
             'stock' => $validated['stock'],
             'category_id' => $validated['category_id'] ?? null,
-            'images' => $images,
-            'detail_images' => $detailImages,
+            'images' => array_merge($existingImages, $newImages),
+            'detail_images' => array_merge($existingDetailImages, $newDetailImages),
             'is_active' => $validated['is_active'] ?? true,
             'is_popular' => $validated['is_popular'] ?? false,
         ];
+    }
+
+    private function uploadImages(?array $files): array
+    {
+        if (!$files) return [];
+        $urls = [];
+        foreach ($files as $file) {
+            if ($file && $file->isValid()) {
+                $path = $file->store('products', 'public');
+                $urls[] = asset('storage/' . $path);
+            }
+        }
+        return $urls;
     }
 
     public function destroyProduct(string $id)
