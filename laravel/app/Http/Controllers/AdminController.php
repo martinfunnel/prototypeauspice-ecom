@@ -180,74 +180,99 @@ class AdminController extends Controller
     // ==================== USERS (Super Admin only) ====================
     public function users()
     {
-        $users = User::with('roles')->orderBy('name')->paginate(20);
-        $roles = Role::orderBy('name')->get();
-        return view('admin.users', compact('users', 'roles'));
+        $users = User::with('userRoles')->orderBy('name')->paginate(20);
+        $availableRoles = ['super_admin', 'admin', 'vendeur', 'comptable'];
+        $newCredentials = session('new_credentials');
+        return view('admin.users', compact('users', 'availableRoles', 'newCredentials'));
     }
 
     public function storeUser(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:6',
-            'role_ids' => 'nullable|array',
-            'role_ids.*' => 'exists:roles,id',
+            'full_name' => 'nullable|string|max:255',
+            'role' => 'required|string|in:super_admin,admin,vendeur,comptable',
         ]);
+
+        // Génération identifiant unique
+        do {
+            $identifier = AuthController::generateIdentifier();
+        } while (User::where('identifier', $identifier)->exists());
+
+        $password = AuthController::generatePassword();
+        $email = strtolower($identifier) . '@auspice.local';
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'identifier' => $identifier,
+            'email' => $email,
+            'name' => $validated['full_name'] ?? $identifier,
+            'full_name' => $validated['full_name'] ?? null,
+            'password' => Hash::make($password),
+            'email_verified_at' => now(),
         ]);
 
-        if (!empty($validated['role_ids'])) {
-            $user->roles()->sync($validated['role_ids']);
-        }
+        // Rôle métier
+        UserRole::create(['user_id' => $user->id, 'role' => $validated['role']]);
 
-        return redirect('/admin/users')->with('success', 'Utilisateur créé');
-    }
+        // Sync avec permissions granulaires
+        $roleModel = Role::firstOrCreate(['key' => $validated['role']], ['name' => ucfirst($validated['role'])]);
+        $user->roles()->attach($roleModel->id);
 
-    public function editUser(string $id)
-    {
-        $user = User::with('roles')->findOrFail($id);
-        $roles = Role::orderBy('name')->get();
-        return view('admin.users', compact('user', 'roles'));
-    }
-
-    public function updateUser(Request $request, string $id)
-    {
-        $user = User::findOrFail($id);
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:6',
-            'role_ids' => 'nullable|array',
-            'role_ids.*' => 'exists:roles,id',
-        ]);
-
-        $user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ]);
-
-        if (!empty($validated['password'])) {
-            $user->update(['password' => Hash::make($validated['password'])]);
-        }
-
-        $user->roles()->sync($validated['role_ids'] ?? []);
-
-        return redirect('/admin/users')->with('success', 'Utilisateur mis à jour');
+        return redirect('/admin/users')->with('new_credentials', [
+            'identifier' => $identifier,
+            'password' => $password,
+        ])->with('success', 'Compte staff créé. Affichez les identifiants ci-dessous.');
     }
 
     public function destroyUser(string $id)
     {
         $user = User::findOrFail($id);
-        if ($user->isSuperAdmin() && User::whereHas('roles', fn ($q) => $q->where('key', 'super_admin'))->count() <= 1) {
-            return redirect('/admin/users')->with('error', 'Impossible de supprimer le dernier super admin');
+
+        // Empêcher la suppression de son propre compte
+        if ($user->id === auth()->id()) {
+            return redirect('/admin/users')->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
         }
+
+        // Empêcher la suppression du dernier super_admin
+        if ($user->isSuperAdmin()) {
+            $superCount = UserRole::where('role', 'super_admin')->count();
+            if ($superCount <= 1) {
+                return redirect('/admin/users')->with('error', 'Impossible de supprimer le dernier super admin.');
+            }
+        }
+
         $user->delete();
         return redirect('/admin/users')->with('success', 'Utilisateur supprimé');
+    }
+
+    public function updateUserRole(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'role' => 'required|string|in:super_admin,admin,vendeur,comptable',
+            'action' => 'required|in:add,remove',
+        ]);
+
+        $user = User::findOrFail($id);
+
+        if ($validated['action'] === 'add') {
+            UserRole::firstOrCreate(['user_id' => $user->id, 'role' => $validated['role']]);
+            $roleModel = Role::firstOrCreate(['key' => $validated['role']], ['name' => ucfirst($validated['role'])]);
+            $user->roles()->syncWithoutDetaching($roleModel->id);
+        } else {
+            // Vérifier qu'on ne retire pas le dernier super_admin
+            if ($validated['role'] === 'super_admin' && $user->isSuperAdmin()) {
+                $superCount = UserRole::where('role', 'super_admin')->count();
+                if ($superCount <= 1) {
+                    return redirect('/admin/users')->with('error', 'Impossible de retirer le dernier super admin.');
+                }
+            }
+            UserRole::where('user_id', $user->id)->where('role', $validated['role'])->delete();
+            $roleModel = Role::where('key', $validated['role'])->first();
+            if ($roleModel) {
+                $user->roles()->detach($roleModel->id);
+            }
+        }
+
+        return redirect('/admin/users')->with('success', 'Rôle mis à jour');
     }
 
     // ==================== ROLES (Super Admin only) ====================

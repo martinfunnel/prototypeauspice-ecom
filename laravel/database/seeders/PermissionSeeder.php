@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -74,18 +75,23 @@ class PermissionSeeder extends Seeder
         $viewerPermIds = Permission::where('key', 'like', 'view_%')->pluck('id')->toArray();
         $viewerRole->permissions()->sync($viewerPermIds);
 
-        // Create default super admin user
+        // Create default super admin user with AUS-MASTER identifier
         $superAdmin = User::firstOrCreate(
-            ['email' => 'super@admin.com'],
-            ['name' => 'Super Admin', 'password' => Hash::make('superadmin123')]
+            ['email' => 'aus-master@auspice.local'],
+            [
+                'identifier' => 'AUS-MASTER',
+                'name' => 'Super Admin',
+                'full_name' => 'Super Administrateur',
+                'password' => Hash::make('superadmin123'),
+                'email_verified_at' => now(),
+            ]
         );
-        $superAdmin->roles()->syncWithoutDetaching($superAdminRole->id);
 
-        // Create default admin user
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
-            ['name' => 'Admin', 'password' => Hash::make('admin123')]
-        );
-        $admin->roles()->syncWithoutDetaching($adminRole->id);
+        // Rôle métier dans user_roles
+        UserRole::firstOrCreate(['user_id' => $superAdmin->id, 'role' => 'super_admin']);
+        UserRole::firstOrCreate(['user_id' => $superAdmin->id, 'role' => 'admin']);
+
+        // Permissions granulaires
+        $superAdmin->roles()->syncWithoutDetaching([$superAdminRole->id, $adminRole->id]);
     }
 }

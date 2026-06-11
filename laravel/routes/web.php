@@ -29,9 +29,10 @@ Route::post('/suivi', [TrackController::class, 'search'])->name('track.search');
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Claim first admin (doit être connecté mais pas forcément admin)
+Route::middleware(['auth'])->post('/admin/claim-first-admin', [AuthController::class, 'claimFirstAdmin'])->name('admin.claim');
 
 // Admin — protégé par permissions granulaires
 Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
@@ -71,9 +72,8 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
     Route::middleware('super_admin')->group(function () {
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
         Route::post('/users', [AdminController::class, 'storeUser']);
-        Route::get('/users/{id}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
-        Route::patch('/users/{id}', [AdminController::class, 'updateUser']);
         Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
+        Route::post('/users/{id}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role');
 
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole']);
