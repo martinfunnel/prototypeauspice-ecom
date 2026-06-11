@@ -1,81 +1,68 @@
 @extends('components.layout')
 
-@section('title', 'Passer commande — Auspice Market')
+@section('title', 'Finaliser ma commande — Santé Ivoire')
 
 @section('content')
-<section class="py-12 bg-white min-h-[60vh]">
-    <div class="max-w-4xl mx-auto px-4">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Passer commande</h1>
+<section class="mx-auto max-w-5xl px-4 py-10">
+    <h1 class="font-display text-3xl font-bold">Finaliser ma commande</h1>
+    <p class="mt-1 text-sm text-success">💵 Paiement à la livraison disponible</p>
 
-        <div class="grid md:grid-cols-2 gap-12">
-            {{-- Formulaire --}}
-            <div>
-                <form action="/commande" method="POST" class="space-y-6">
-                    @csrf
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
-                        <input type="text" name="customer_name" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone (WhatsApp)</label>
-                        <input type="tel" name="customer_phone" required placeholder="+225 07 XX XX XX XX" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Commune de livraison</label>
-                        <select name="commune_id" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="">Choisir une commune</option>
-                            @foreach($communes as $commune)
-                                <option value="{{ $commune->id }}">{{ $commune->name }} — {{ number_format($commune->delivery_fee, 0, ',', ' ') }} FCFA ({{ $commune->delivery_days }} jour(s))</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Adresse précise</label>
-                        <textarea name="address" required rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="Quartier, rue, point de repère..."></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optionnel)</label>
-                        <textarea name="notes" rows="2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
-                    </div>
-
-                    <button type="submit" class="w-full bg-emerald-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-800 transition">
-                        Confirmer la commande
-                    </button>
-                </form>
-            </div>
-
-            {{-- Récapitulatif --}}
-            <div class="bg-gray-50 p-6 rounded-xl h-fit">
-                <h2 class="text-xl font-bold text-gray-900 mb-6">Récapitulatif</h2>
-                <div class="space-y-4">
-                    @foreach($cart['items'] as $item)
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">{{ $item['product']->name }} x{{ $item['quantity'] }}</span>
-                            <span class="font-medium">{{ number_format($item['subtotal'], 0, ',', ' ') }} FCFA</span>
-                        </div>
-                    @endforeach
-                </div>
-                <div class="border-t border-gray-200 mt-4 pt-4">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-gray-600">Sous-total</span>
-                        <span>{{ number_format($cart['total'], 0, ',', ' ') }} FCFA</span>
-                    </div>
-                    <div class="flex justify-between mb-4">
-                        <span class="text-gray-600">Livraison</span>
-                        <span class="text-gray-500">À calculer</span>
-                    </div>
-                    <div class="flex justify-between text-lg font-bold">
-                        <span>Total</span>
-                        <span>{{ number_format($cart['total'], 0, ',', ' ') }} FCFA</span>
-                    </div>
-                </div>
-            </div>
+    @if(empty($cart['items']))
+        <div class="mt-16 text-center">
+            <p class="text-muted-foreground">Votre panier est vide.</p>
+            <a href="/catalogue" class="mt-4 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition">Voir le catalogue</a>
         </div>
-    </div>
+    @else
+        <div class="mt-8 grid gap-8 md:grid-cols-[1.5fr_1fr]">
+            <form action="/commande" method="POST" class="space-y-4">
+                @csrf
+                <label class="block">
+                    <span class="mb-1.5 block text-sm font-semibold">Nom complet *</span>
+                    <input type="text" name="customer_name" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-sm font-semibold">Numéro de téléphone *</span>
+                    <input type="tel" name="customer_phone" required placeholder="+225 07 00 00 00 00" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-sm font-semibold">Commune / lieu de livraison *</span>
+                    <select name="commune_id" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
+                        <option value="">— Sélectionner —</option>
+                        @foreach($communes as $c)
+                            <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->zone }}) — {{ number_format($c->delivery_fee, 0, ',', ' ') }} FCFA</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-sm font-semibold">Adresse précise *</span>
+                    <textarea name="address" required rows="2" placeholder="Quartier, rue, point de repère..." class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent"></textarea>
+                </label>
+                <label class="block">
+                    <span class="mb-1.5 block text-sm font-semibold">Notes (optionnel)</span>
+                    <textarea name="notes" rows="2" placeholder="Instructions particulières..." class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent"></textarea>
+                </label>
+                <button type="submit" class="w-full rounded-xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-accent transition hover:scale-[1.02]">
+                    Confirmer la commande ({{ number_format($cart['total'], 0, ',', ' ') }} FCFA)
+                </button>
+            </form>
+
+            <aside class="h-fit rounded-2xl border border-border bg-card p-5 shadow-card">
+                <h3 class="font-display text-lg font-bold">Récapitulatif</h3>
+                <ul class="mt-4 space-y-2 text-sm">
+                    @foreach($cart['items'] as $item)
+                        <li class="flex justify-between">
+                            <span class="text-foreground/80">{{ $item['quantity'] }}× {{ $item['product']->name }}</span>
+                            <span class="font-semibold">{{ number_format($item['subtotal'], 0, ',', ' ') }} FCFA</span>
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="mt-4 space-y-1 border-t border-border pt-3 text-sm">
+                    <div class="flex justify-between text-foreground/80"><span>Sous-total</span><span>{{ number_format($cart['total'], 0, ',', ' ') }} FCFA</span></div>
+                    <div class="flex justify-between text-foreground/80"><span>Livraison</span><span>—</span></div>
+                    <div class="flex justify-between text-base font-bold text-primary"><span>Total</span><span>{{ number_format($cart['total'], 0, ',', ' ') }} FCFA</span></div>
+                </div>
+            </aside>
+        </div>
+    @endif
 </section>
 @endsection
