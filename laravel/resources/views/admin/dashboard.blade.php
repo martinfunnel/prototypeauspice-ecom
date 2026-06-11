@@ -15,8 +15,9 @@ $statCards = [
     ['label' => 'Livrées', 'value' => (string)$stats['delivered_orders'], 'tone' => 'success', 'icon' => '<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>'],
 ];
 $statCards2 = [
-    ['label' => 'Produits', 'value' => (string)$stats['total_products'], 'tone' => 'primary', 'icon' => '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'],
-    ['label' => 'Clients', 'value' => (string)$stats['total_customers'], 'tone' => 'accent', 'icon' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'],
+    ['label' => 'Produits actifs', 'value' => $stats['products_active'] . ' / ' . $stats['products_total'], 'tone' => 'primary', 'icon' => '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'],
+    ['label' => 'Stock faible', 'value' => (string)$stats['low_stock'], 'tone' => 'warning', 'icon' => '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'],
+    ['label' => 'Communes livrées', 'value' => (string)$stats['communes_active'], 'tone' => 'accent', 'icon' => '<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>'],
 ];
 $tones = [
     'primary' => 'bg-primary/10 text-primary',
@@ -86,41 +87,5 @@ $tones = [
         @endif
     </div>
 
-    {{-- Commandes récentes --}}
-    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
-        <h2 class="font-display text-base font-bold mb-3">Commandes récentes</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-muted">
-                    <tr>
-                        <th class="text-left p-2 text-xs font-semibold text-muted-foreground">N°</th>
-                        <th class="text-left p-2 text-xs font-semibold text-muted-foreground">Client</th>
-                        <th class="text-right p-2 text-xs font-semibold text-muted-foreground">Total</th>
-                        <th class="text-left p-2 text-xs font-semibold text-muted-foreground">Statut</th>
-                        <th class="text-left p-2 text-xs font-semibold text-muted-foreground">Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($recentOrders as $order)
-                        <tr class="border-b border-border hover:bg-muted transition">
-                            <td class="p-2 font-medium">{{ $order->order_number }}</td>
-                            <td class="p-2">{{ $order->customer_name }}</td>
-                            <td class="p-2 text-right">{{ number_format($order->total, 0, ',', ' ') }} FCFA</td>
-                            <td class="p-2">
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium
-                                    @if($order->status == 'delivered') bg-success/15 text-success
-                                    @elseif($order->status == 'cancelled') bg-destructive/10 text-destructive
-                                    @else bg-warning/15 text-warning-foreground
-                                    @endif">
-                                    {{ $order->statusLabel() }}
-                                </span>
-                            </td>
-                            <td class="p-2 text-muted-foreground text-xs">{{ $order->created_at->format('d/m H:i') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 @endsection

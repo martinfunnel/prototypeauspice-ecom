@@ -24,11 +24,11 @@ class AdminController extends Controller
             'pending_orders' => Order::pending()->count(),
             'delivered_orders' => Order::delivered()->count(),
             'total_revenue' => Order::where('status', '!=', 'cancelled')->sum('total'),
-            'total_products' => Product::count(),
-            'total_customers' => Order::distinct('customer_phone')->count('customer_phone'),
+            'products_active' => Product::where('is_active', true)->count(),
+            'products_total' => Product::count(),
+            'low_stock' => Product::where('is_active', true)->where('stock', '<=', 3)->count(),
+            'communes_active' => Commune::where('is_active', true)->count(),
         ];
-
-        $recentOrders = Order::with('items')->orderByDesc('created_at')->limit(10)->get();
 
         $salesByDay = Order::where('status', '!=', 'cancelled')
             ->where('created_at', '>=', now()->subDays(6))
@@ -37,7 +37,7 @@ class AdminController extends Controller
             ->orderBy('date')
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recentOrders', 'salesByDay'));
+        return view('admin.dashboard', compact('stats', 'salesByDay'));
     }
 
     public function products()
