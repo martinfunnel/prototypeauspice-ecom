@@ -58,12 +58,42 @@
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                 <span class="text-sm font-semibold">Quantité :</span>
                 <div class="flex items-center rounded-lg border border-border">
-                    <button type="button" onclick="let q=document.getElementById('qty'); q.value=Math.max(1,parseInt(q.value)-1)" class="grid h-11 w-11 place-items-center hover:bg-muted transition"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg></button>
+                    <button type="button" onclick="let q=document.getElementById('qty'); q.value=Math.max(1,parseInt(q.value)-1); q.dispatchEvent(new Event('input'));" class="grid h-11 w-11 place-items-center hover:bg-muted transition"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg></button>
                     <input type="number" id="qty" name="quantity" value="1" min="1" class="w-10 text-center font-semibold bg-transparent border-none focus:ring-0 p-0">
-                    <button type="button" onclick="let q=document.getElementById('qty'); q.value=parseInt(q.value)+1" class="grid h-11 w-11 place-items-center hover:bg-muted transition"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button>
+                    <button type="button" onclick="let q=document.getElementById('qty'); q.value=parseInt(q.value)+1; q.dispatchEvent(new Event('input'));" class="grid h-11 w-11 place-items-center hover:bg-muted transition"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button>
                 </div>
                 <button type="submit" class="ml-auto rounded-xl bg-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent transition hover:scale-105">Ajouter au panier</button>
             </form>
+
+            {{-- Share Buttons --}}
+            <div class="mt-6 border-t border-border pt-5">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="mr-1 inline-flex items-center gap-1.5 text-sm font-semibold text-foreground/80">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 6l-4-4-4 4"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v14"/></svg>
+                        Partager :
+                    </span>
+                    @php
+                        $shareUrl = urlencode(request()->url());
+                        $shareTitle = urlencode($product->name);
+                    @endphp
+                    <a href="https://wa.me/?text={{ $shareTitle }}%20%E2%80%94%20{{ $shareUrl }}" target="_blank" class="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition bg-[#25D366] text-white hover:opacity-90">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                        WhatsApp
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrl }}" target="_blank" class="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition bg-[#1877F2] text-white hover:opacity-90">
+                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+                        Facebook
+                    </a>
+                    <a href="https://t.me/share/url?url={{ $shareUrl }}&text={{ $shareTitle }}" target="_blank" class="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition bg-[#26A5E4] text-white hover:opacity-90">
+                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21.198 2.433a2.242 2.242 0 00-1.022.215l-16.06 6.69a1.456 1.456 0 00-.13 2.67l3.74 1.56 1.54 5.02c.113.37.48.62.91.62.31 0 .61-.13.8-.35l2.48-2.48 3.88 2.87c.34.25.79.27 1.16.06.37-.21.6-.6.6-1.02V4.24a2.24 2.24 0 00-2.07-1.807z"/></svg>
+                        Telegram
+                    </a>
+                    <button type="button" onclick="navigator.clipboard.writeText(window.location.href); alert('Lien copié !');" class="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold hover:border-accent transition">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        Copier
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -99,8 +129,8 @@
                     <span class="mb-1.5 block text-sm font-semibold">Adresse précise *</span>
                     <textarea name="address" required rows="2" placeholder="Quartier, rue, point de repère..." class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent"></textarea>
                 </label>
-                <button type="submit" class="w-full rounded-xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-accent transition hover:scale-[1.02]">
-                    Confirmer la commande
+                <button type="submit" id="order-btn" class="w-full rounded-xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-accent transition hover:scale-[1.02]">
+                    Confirmer la commande (<span id="btn-total">{{ number_format($product->displayPrice(), 0, ',', ' ') }} FCFA</span>)
                 </button>
             </form>
 
@@ -203,6 +233,30 @@
         </div>
     </section>
 
+    {{-- Testimonials --}}
+    @if($testimonials->count())
+    <section class="mt-16">
+        <h2 class="font-display text-2xl font-bold md:text-3xl">Ce que disent nos clients</h2>
+        <p class="mt-1 text-sm text-muted-foreground">Avis vérifiés de la communauté Auspice Market.</p>
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach($testimonials as $t)
+                <div class="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-card">
+                    <div class="flex items-center gap-1">
+                        @for($i = 1; $i <= 5; $i++)
+                            <svg class="h-4 w-4 {{ $i <= $t->rating ? 'text-warning fill-warning' : 'text-muted-foreground' }}" fill="{{ $i <= $t->rating ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                        @endfor
+                    </div>
+                    <p class="text-sm text-foreground/80">"{{ $t->content }}"</p>
+                    <div class="mt-auto">
+                        <p class="text-sm font-semibold">{{ $t->author_name }}</p>
+                        <p class="text-xs text-muted-foreground">{{ $t->role }}</p>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </section>
+    @endif
+
     {{-- Produits similaires --}}
     @if($related->count())
     <div class="mt-16">
@@ -237,6 +291,7 @@
         document.getElementById('recap-subtotal2').textContent = subtotal.toLocaleString('fr-FR') + ' FCFA';
         document.getElementById('recap-fee').textContent = fee ? fee.toLocaleString('fr-FR') + ' FCFA' : '—';
         document.getElementById('recap-total').textContent = total.toLocaleString('fr-FR') + ' FCFA';
+        document.getElementById('btn-total').textContent = total.toLocaleString('fr-FR') + ' FCFA';
     }
 
     qtyInput.addEventListener('change', updateRecap);

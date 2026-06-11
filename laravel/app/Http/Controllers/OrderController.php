@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Commune;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -106,6 +107,21 @@ class OrderController extends Controller
             'quantity' => $request->quantity,
             'subtotal' => $subtotal,
         ]);
+
+        // Notif WhatsApp admin (même logique que React notifyAdminInNewTab)
+        $waMsg = urlencode(
+            "📦 *Nouvelle commande*\n\n" .
+            "N° : {$order->order_number}\n" .
+            "Client : {$request->customer_name}\n" .
+            "Tél : {$request->customer_phone}\n" .
+            "Commune : {$commune->name}\n" .
+            "Adresse : {$request->address}\n\n" .
+            "Article : {$product->name} x {$request->quantity}\n" .
+            "Sous-total : " . number_format($subtotal, 0, ',', ' ') . " FCFA\n" .
+            "Livraison : " . number_format($commune->delivery_fee, 0, ',', ' ') . " FCFA\n" .
+            "*Total : " . number_format($order->total, 0, ',', ' ') . " FCFA*"
+        );
+        session()->flash('wa_admin_url', "https://wa.me/?text={$waMsg}");
 
         return redirect()->route('track')
             ->with('success', 'Commande envoyée ! Numéro : ' . $order->order_number);
