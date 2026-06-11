@@ -1,11 +1,9 @@
-@extends('components.layout')
+@extends('components.admin-shell')
 
-@section('title', 'Admin — Bannières')
+@section('title', 'Bannières')
 
 @section('content')
-<section class="py-8 bg-background min-h-screen">
-    <div class="max-w-4xl mx-auto px-4">
-        <h1 class="font-display text-3xl font-bold text-foreground mb-8">Bannières promotionnelles</h1>
+
 
         @if(session('success'))
             <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
@@ -28,6 +26,4 @@
                 </div>
             @endforeach
         </div>
-    </div>
-</section>
 @endsection

@@ -14,18 +14,19 @@
     --radius-xl: calc(0.75rem + 4px);
     --radius-2xl: calc(0.75rem + 8px);
 
-    --color-background: #f9fbfa;
-    --color-foreground: #1a2e2b;
+    /* Exactement les couleurs du React (oklch convertis) */
+    --color-background: #f8fafc;
+    --color-foreground: #1e293b;
     --color-card: #ffffff;
-    --color-card-foreground: #1a2e2b;
+    --color-card-foreground: #1e293b;
     --color-popover: #ffffff;
-    --color-popover-foreground: #1a2e2b;
-    --color-primary: #3b6ea5;
-    --color-primary-foreground: #f9fbfa;
-    --color-secondary: #e8f5e9;
-    --color-secondary-foreground: #2e5c3a;
-    --color-muted: #f0f4f3;
-    --color-muted-foreground: #6b8a82;
+    --color-popover-foreground: #1e293b;
+    --color-primary: #3b82f6;
+    --color-primary-foreground: #f8fafc;
+    --color-secondary: #f1f5f9;
+    --color-secondary-foreground: #334155;
+    --color-muted: #f1f5f9;
+    --color-muted-foreground: #64748b;
     --color-accent: #4caf7a;
     --color-accent-foreground: #ffffff;
     --color-destructive: #c94a4a;
@@ -33,19 +34,29 @@
     --color-success: #4caf7a;
     --color-success-foreground: #ffffff;
     --color-warning: #d4a843;
-    --color-warning-foreground: #1a2e2b;
-    --color-border: #e2eae7;
-    --color-input: #e2eae7;
+    --color-warning-foreground: #1e293b;
+    --color-border: #e2e8f0;
+    --color-input: #e2e8f0;
     --color-ring: #4caf7a;
     --color-teal: #4a9e9e;
+
+    /* Sidebar colors — identiques au React */
+    --color-sidebar: #1e293b;
+    --color-sidebar-foreground: #f8fafc;
+    --color-sidebar-primary: #4caf7a;
+    --color-sidebar-primary-foreground: #ffffff;
+    --color-sidebar-accent: #334155;
+    --color-sidebar-accent-foreground: #f8fafc;
+    --color-sidebar-border: #334155;
+    --color-sidebar-ring: #4caf7a;
 }
 
 :root {
-    --gradient-hero: linear-gradient(135deg, #3b6ea5, #2c5a8a);
+    --gradient-hero: linear-gradient(135deg, #3b82f6, #2563eb);
     --gradient-accent: linear-gradient(135deg, #5cc78a, #4caf7a);
-    --gradient-soft: linear-gradient(180deg, #f9fbfa, #e8f5e9);
-    --shadow-card: 0 1px 3px rgba(59, 110, 165, 0.08), 0 4px 16px rgba(59, 110, 165, 0.06);
-    --shadow-elevated: 0 10px 40px -10px rgba(59, 110, 165, 0.25);
+    --gradient-soft: linear-gradient(180deg, #f8fafc, #e8f5e9);
+    --shadow-card: 0 1px 3px rgba(59, 130, 246, 0.08), 0 4px 16px rgba(59, 130, 246, 0.06);
+    --shadow-elevated: 0 10px 40px -10px rgba(59, 130, 246, 0.25);
     --shadow-accent: 0 8px 24px -8px rgba(76, 175, 122, 0.4);
 }
 

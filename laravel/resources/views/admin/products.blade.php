@@ -1,13 +1,8 @@
-@extends('components.layout')
+@extends('components.admin-shell')
 
-@section('title', 'Admin — Produits')
+@section('title', 'Produits')
 
 @section('content')
-<section class="py-8 bg-background min-h-screen">
-    <div class="max-w-7xl mx-auto px-4">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="font-display text-3xl font-bold text-foreground">Produits</h1>
-        </div>
 
         @if(session('success'))
             <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
@@ -50,6 +45,4 @@
         <div class="mt-6">
             {{ $products->links() }}
         </div>
-    </div>
-</section>
 @endsection
