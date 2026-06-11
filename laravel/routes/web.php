@@ -44,6 +44,11 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
 
     Route::middleware('can:view_dashboard')->get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
+    // Profile
+    Route::get('/profil', [AdminController::class, 'profile'])->name('admin.profile');
+    Route::patch('/profil', [AdminController::class, 'updateProfile']);
+    Route::post('/profil/password', [AdminController::class, 'updatePassword']);
+
     // Products
     Route::middleware('can:view_products')->get('/products', [AdminController::class, 'products'])->name('admin.products');
     Route::middleware('can:create_products')->post('/products', [AdminController::class, 'storeProduct']);

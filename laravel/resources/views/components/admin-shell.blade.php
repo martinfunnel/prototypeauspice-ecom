@@ -82,13 +82,19 @@
                 @endisSuperAdmin
             </nav>
 
-            <form action="/logout" method="POST">
-                @csrf
-                <button type="submit" class="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 hover:bg-muted transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                    Déconnexion
-                </button>
-            </form>
+            <div class="mt-2 border-t border-border pt-2">
+                <a href="/admin/profil" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition {{ str_starts_with($path, 'admin/profil') ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:bg-muted' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Profil
+                </a>
+                <form action="/logout" method="POST">
+                    @csrf
+                    <button type="submit" class="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 hover:bg-muted transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
         </div>
     </aside>
 

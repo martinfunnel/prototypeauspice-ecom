@@ -566,6 +566,46 @@ class AdminController extends Controller
         ]);
     }
 
+    // ==================== PROFILE ====================
+    public function profile()
+    {
+        $user = auth()->user();
+        return view('admin.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'full_name' => 'nullable|string|max:255',
+        ]);
+
+        $user->update($validated);
+
+        return redirect('/admin/profil')->with('success', 'Profil mis à jour');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = auth()->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.']);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return redirect('/admin/profil')->with('success', 'Mot de passe changé avec succès');
+    }
+
     // ==================== ROLES (Super Admin only) ====================
     public function roles()
     {
