@@ -3,73 +3,144 @@
 @section('title', 'Commandes')
 
 @section('content')
+@php
+$statusBadge = [
+    'pending' => 'bg-warning/15 text-warning-foreground border-warning/30',
+    'confirmed' => 'bg-teal/15 text-teal border-teal/30',
+    'processing' => 'bg-teal/15 text-teal border-teal/30',
+    'shipped' => 'bg-primary/10 text-primary border-primary/30',
+    'delivered' => 'bg-success/15 text-success border-success/30',
+    'cancelled' => 'bg-destructive/15 text-destructive border-destructive/30',
+];
+@endphp
 
+@if(session('success'))
+    <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
+@endif
 
-        @if(session('success'))
-            <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
-        @endif
+{{-- Barre recherche + filtre --}}
+<form action="/admin/orders" method="GET" class="mb-4 flex flex-wrap items-center gap-2">
+    <div class="relative flex-1 min-w-[200px]">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" name="q" value="{{ request('q') }}" placeholder="N° commande, client, téléphone…" class="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:border-accent">
+    </div>
+    <select name="status" class="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+        <option value="all">Tous les statuts</option>
+        @foreach($statuses as $key => $label)
+            <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>{{ $label }}</option>
+        @endforeach
+    </select>
+    <button type="submit" class="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition">Filtrer</button>
+    <a href="/admin/orders" class="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition">Réinitialiser</a>
+</form>
 
-        <div class="bg-card rounded-xl shadow-card overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-muted">
-                    <tr>
-                        <th class="text-left p-3">N°</th>
-                        <th class="text-left p-3">Client</th>
-                        <th class="text-left p-3">Téléphone</th>
-                        <th class="text-left p-3">Commune</th>
-                        <th class="text-right p-3">Total</th>
-                        <th class="text-left p-3">Statut</th>
-                        <th class="text-left p-3">Date</th>
-                        <th class="text-left p-3">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($orders as $order)
-                        <tr class="border-b hover:bg-muted">
-                            <td class="p-3 font-medium">{{ $order->order_number }}</td>
-                            <td class="p-3">{{ $order->customer_name }}</td>
-                            <td class="p-3">{{ $order->customer_phone }}</td>
-                            <td class="p-3">{{ $order->commune_name }}</td>
-                            <td class="p-3 text-right">{{ number_format($order->total, 0, ',', ' ') }} FCFA</td>
-                            <td class="p-3">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium
-                                    @if($order->status == 'delivered') bg-green-100 text-green-800
-                                    @elseif($order->status == 'cancelled') bg-red-100 text-red-800
-                                    @else bg-yellow-100 text-yellow-800
-                                    @endif">
-                                    {{ $order->statusLabel() }}
-                                </span>
-                            </td>
-                            <td class="p-3 text-muted-foreground">{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                            <td class="p-3">
-                                @canDo('update_orders')
-                                <form action="/admin/orders/{{ $order->id }}/status" method="POST" class="flex gap-2">
-                                    @csrf @method('PATCH')
-                                    <select name="status" class="text-xs border border-border rounded px-2 py-1 bg-background">
-                                        <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>En attente</option>
-                                        <option value="confirmed" {{ $order->status == 'confirmed' ? 'selected' : '' }}>Confirmée</option>
-                                        <option value="processing" {{ $order->status == 'processing' ? 'selected' : '' }}>Préparation</option>
-                                        <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}>Expédiée</option>
-                                        <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Livrée</option>
-                                        <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Annulée</option>
-                                    </select>
-                                    <button type="submit" class="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">OK</button>
-                                </form>
-                                @endcanDo
-                                @canDo('delete_orders')
-                                <form action="/admin/orders/{{ $order->id }}" method="POST" class="inline mt-1" onsubmit="return confirm('Supprimer cette commande ?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-destructive hover:opacity-70 text-xs">Supprimer</button>
-                                </form>
-                                @endcanDo
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+@if($orders->isEmpty())
+    <div class="rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
+        Aucune commande.
+    </div>
+@else
+    <div class="space-y-3">
+        @foreach($orders as $o)
+            @php
+                $waPhone = preg_replace('/[^0-9]/', '', $o->customer_phone);
+                $waMsg = urlencode("Bonjour {$o->customer_name}, concernant votre commande {$o->order_number}…");
+            @endphp
+            <details class="group rounded-2xl border border-border bg-card shadow-card">
+                <summary class="flex cursor-pointer items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-mono text-sm font-bold text-primary">{{ $o->order_number }}</span>
+                            <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold {{ $statusBadge[$o->status] ?? 'bg-muted text-muted-foreground border-border' }}">
+                                {{ $o->statusLabel() }}
+                            </span>
+                            <span class="text-xs text-muted-foreground">{{ $o->created_at->format('d/m/Y H:i') }}</span>
+                        </div>
+                        <div class="mt-1 truncate text-sm">
+                            <span class="font-semibold">{{ $o->customer_name }}</span>
+                            <span class="text-muted-foreground"> · {{ $o->customer_phone }} · {{ $o->commune_name }}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-display text-base font-bold">{{ number_format($o->total, 0, ',', ' ') }} FCFA</div>
+                        <div class="text-[10px] uppercase text-muted-foreground">{{ $o->items->count() }} article(s)</div>
+                    </div>
+                </summary>
 
-        <div class="mt-6">
-            {{ $orders->links() }}
-        </div>
+                <div class="grid gap-4 border-t border-border p-4 md:grid-cols-2">
+                    {{-- Colonne 1 --}}
+                    <div>
+                        <div class="text-xs font-semibold uppercase text-muted-foreground">Adresse</div>
+                        <p class="mt-1 text-sm">{{ $o->address }}</p>
+                        @if($o->notes)
+                            <p class="mt-2 rounded bg-muted/60 p-2 text-xs italic">{{ $o->notes }}</p>
+                        @endif
+
+                        <div class="mt-4 text-xs font-semibold uppercase text-muted-foreground">Articles</div>
+                        <ul class="mt-1 space-y-1 text-sm">
+                            @foreach($o->items as $item)
+                                <li class="flex justify-between gap-2">
+                                    <span>{{ $item->quantity }}× {{ $item->product_name }}</span>
+                                    <span class="font-mono text-muted-foreground">{{ number_format($item->subtotal, 0, ',', ' ') }} FCFA</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <div class="mt-3 border-t border-border pt-2 text-sm">
+                            <div class="flex justify-between text-muted-foreground">
+                                <span>Sous-total</span>
+                                <span>{{ number_format($o->subtotal, 0, ',', ' ') }} FCFA</span>
+                            </div>
+                            <div class="flex justify-between text-muted-foreground">
+                                <span>Livraison</span>
+                                <span>{{ number_format($o->delivery_fee, 0, ',', ' ') }} FCFA</span>
+                            </div>
+                            <div class="mt-1 flex justify-between font-bold">
+                                <span>Total</span>
+                                <span>{{ number_format($o->total, 0, ',', ' ') }} FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Colonne 2 --}}
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs font-semibold uppercase text-muted-foreground">Statut</div>
+                            <form action="/admin/orders/{{ $o->id }}/status" method="POST" class="mt-1">
+                                @csrf @method('PATCH')
+                                <select name="status" onchange="this.form.submit()" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm cursor-pointer">
+                                    @foreach($statuses as $key => $label)
+                                        <option value="{{ $key }}" {{ $o->status === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="window.print()" class="flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                                Imprimer
+                            </button>
+                            <a href="https://wa.me/{{ $waPhone }}?text={{ $waMsg }}" target="_blank" class="flex items-center justify-center gap-2 rounded-lg bg-success/15 px-3 py-2 text-sm font-medium text-success hover:bg-success/25 transition">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                                Client
+                            </a>
+                            <a href="https://wa.me/?text={{ urlencode("Commande {$o->order_number} - {$o->customer_name} - Total: " . number_format($o->total, 0, ',', ' ') . ' FCFA') }}" target="_blank" class="flex items-center justify-center gap-2 rounded-lg bg-accent/15 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/25 transition">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                                Récap
+                            </a>
+                            @canDo('delete_orders')
+                            <form action="/admin/orders/{{ $o->id }}" method="POST" onsubmit="return confirm('Supprimer cette commande ?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-destructive hover:bg-muted transition">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    Supprimer
+                                </button>
+                            </form>
+                            @endcanDo
+                        </div>
+                    </div>
+                </div>
+            </details>
+        @endforeach
+    </div>
+@endif
 @endsection

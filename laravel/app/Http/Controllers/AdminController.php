@@ -122,10 +122,34 @@ class AdminController extends Controller
         return redirect('/admin/communes')->with('success', 'Commune supprimée');
     }
 
-    public function orders()
+    public function orders(Request $request)
     {
-        $orders = Order::with('items')->orderByDesc('created_at')->paginate(20);
-        return view('admin.orders', compact('orders'));
+        $query = Order::with('items')->orderByDesc('created_at');
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where(function ($sq) use ($q) {
+                $sq->where('order_number', 'like', "%{$q}%")
+                    ->orWhere('customer_name', 'like', "%{$q}%")
+                    ->orWhere('customer_phone', 'like', "%{$q}%");
+            });
+        }
+
+        $orders = $query->limit(500)->get();
+        $statuses = [
+            'pending' => 'En attente',
+            'confirmed' => 'Confirmée',
+            'processing' => 'En cours',
+            'shipped' => 'Expédiée',
+            'delivered' => 'Livrée',
+            'cancelled' => 'Annulée',
+        ];
+
+        return view('admin.orders', compact('orders', 'statuses'));
     }
 
     public function updateOrderStatus(Request $request, string $id)
