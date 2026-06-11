@@ -156,22 +156,68 @@ class AdminController extends Controller
         return redirect('/admin/products')->with('success', 'Produit supprimé');
     }
 
-    public function categories()
+    public function categories(Request $request)
     {
         $categories = Category::orderBy('sort_order')->get();
-        return view('admin.categories', compact('categories'));
+        $editing = $request->has('edit') ? Category::find($request->edit) : null;
+        return view('admin.categories', compact('categories', 'editing'));
     }
 
     public function storeCategory(Request $request)
     {
-        Category::create($request->all());
+        $validated = $request->validate([
+            'name' => 'required|string|max:200',
+            'slug' => 'nullable|string|max:200',
+            'description' => 'nullable|string|max:1000',
+            'sort_order' => 'required|integer|min:0',
+        ]);
+
+        $data = [
+            'name' => $validated['name'],
+            'slug' => $validated['slug'] ?: \Illuminate\Support\Str::slug($validated['name']),
+            'description' => $validated['description'] ?? null,
+            'sort_order' => $validated['sort_order'],
+        ];
+
+        if ($request->hasFile('image')) {
+            $data['image_url'] = $this->uploadSingleImage($request->file('image'));
+        }
+
+        Category::create($data);
         return redirect('/admin/categories')->with('success', 'Catégorie créée');
     }
 
     public function updateCategory(Request $request, string $id)
     {
-        Category::findOrFail($id)->update($request->all());
+        $category = Category::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:200',
+            'slug' => 'nullable|string|max:200',
+            'description' => 'nullable|string|max:1000',
+            'sort_order' => 'required|integer|min:0',
+        ]);
+
+        $data = [
+            'name' => $validated['name'],
+            'slug' => $validated['slug'] ?: \Illuminate\Support\Str::slug($validated['name']),
+            'description' => $validated['description'] ?? null,
+            'sort_order' => $validated['sort_order'],
+        ];
+
+        if ($request->hasFile('image')) {
+            $data['image_url'] = $this->uploadSingleImage($request->file('image'));
+        } elseif ($request->has('remove_image')) {
+            $data['image_url'] = null;
+        }
+
+        $category->update($data);
         return redirect('/admin/categories')->with('success', 'Catégorie mise à jour');
+    }
+
+    private function uploadSingleImage($file): string
+    {
+        $path = $file->store('categories', 'public');
+        return asset('storage/' . $path);
     }
 
     public function destroyCategory(string $id)

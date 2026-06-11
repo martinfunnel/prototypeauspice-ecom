@@ -48,6 +48,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
     // Categories
     Route::middleware('can:view_categories')->get('/categories', [AdminController::class, 'categories'])->name('admin.categories');
     Route::middleware('can:create_categories')->post('/categories', [AdminController::class, 'storeCategory']);
+    Route::middleware('can:edit_categories')->patch('/categories/{id}', [AdminController::class, 'updateCategory']);
     Route::middleware('can:delete_categories')->delete('/categories/{id}', [AdminController::class, 'destroyCategory']);
 
     // Communes
