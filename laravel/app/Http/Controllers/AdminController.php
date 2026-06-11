@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserInvitation;
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Commune;
 use App\Models\Order;
@@ -11,9 +13,12 @@ use App\Models\PromoBanner;
 use App\Models\Role;
 use App\Models\Testimonial;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -389,18 +394,29 @@ class AdminController extends Controller
     }
 
     // ==================== USERS (Super Admin only) ====================
-    public function users()
+    public function users(Request $request)
     {
-        $users = User::with('userRoles')->orderBy('name')->paginate(20);
+        $q = $request->get('q', '');
+        $usersQuery = User::with('userRoles');
+
+        if ($q) {
+            $usersQuery->where(function($query) use ($q) {
+                $query->where('identifier', 'like', "%{$q}%")
+                    ->orWhere('full_name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
+            });
+        }
+
+        $users = $usersQuery->orderBy('name')->get();
         $availableRoles = ['super_admin', 'admin', 'vendeur', 'comptable'];
-        $newCredentials = session('new_credentials');
-        return view('admin.users', compact('users', 'availableRoles', 'newCredentials'));
+        return view('admin.users', compact('users', 'availableRoles', 'q'));
     }
 
     public function storeUser(Request $request)
     {
         $validated = $request->validate([
             'full_name' => 'nullable|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'role' => 'required|string|in:super_admin,admin,vendeur,comptable',
         ]);
 
@@ -409,15 +425,12 @@ class AdminController extends Controller
             $identifier = AuthController::generateIdentifier();
         } while (User::where('identifier', $identifier)->exists());
 
-        $password = AuthController::generatePassword();
-        $email = strtolower($identifier) . '@auspice.local';
-
         $user = User::create([
             'identifier' => $identifier,
-            'email' => $email,
+            'email' => $validated['email'],
             'name' => $validated['full_name'] ?? $identifier,
             'full_name' => $validated['full_name'] ?? null,
-            'password' => Hash::make($password),
+            'password' => Hash::make(Str::random(32)), // mot de passe aléatoire, l'utilisateur va le reset
             'email_verified_at' => now(),
         ]);
 
@@ -428,22 +441,26 @@ class AdminController extends Controller
         $roleModel = Role::firstOrCreate(['key' => $validated['role']], ['name' => ucfirst($validated['role'])]);
         $user->roles()->attach($roleModel->id);
 
-        return redirect('/admin/users')->with('new_credentials', [
-            'identifier' => $identifier,
-            'password' => $password,
-        ])->with('success', 'Compte staff créé. Affichez les identifiants ci-dessous.');
+        // Générer token reset password pour l'invitation
+        $token = app('auth.password.broker')->createToken($user);
+        $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
+
+        // Envoyer l'email d'invitation
+        Mail::to($user->email)->send(new UserInvitation($identifier, $resetUrl, $user->full_name ?? ''));
+
+        $this->logActivity('create_user', "Création du compte staff {$identifier}", null, null, ['role' => $validated['role']]);
+
+        return redirect('/admin/users')->with('success', "Compte staff créé. Un email d'invitation a été envoyé à {$validated['email']}.");
     }
 
     public function destroyUser(string $id)
     {
         $user = User::findOrFail($id);
 
-        // Empêcher la suppression de son propre compte
         if ($user->id === auth()->id()) {
             return redirect('/admin/users')->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
         }
 
-        // Empêcher la suppression du dernier super_admin
         if ($user->isSuperAdmin()) {
             $superCount = UserRole::where('role', 'super_admin')->count();
             if ($superCount <= 1) {
@@ -451,6 +468,7 @@ class AdminController extends Controller
             }
         }
 
+        $this->logActivity('delete_user', "Suppression du compte {$user->identifier}", null, null);
         $user->delete();
         return redirect('/admin/users')->with('success', 'Utilisateur supprimé');
     }
@@ -468,8 +486,8 @@ class AdminController extends Controller
             UserRole::firstOrCreate(['user_id' => $user->id, 'role' => $validated['role']]);
             $roleModel = Role::firstOrCreate(['key' => $validated['role']], ['name' => ucfirst($validated['role'])]);
             $user->roles()->syncWithoutDetaching($roleModel->id);
+            $this->logActivity('assign_role', "Attribution du rôle {$validated['role']} à {$user->identifier}", null, null);
         } else {
-            // Vérifier qu'on ne retire pas le dernier super_admin
             if ($validated['role'] === 'super_admin' && $user->isSuperAdmin()) {
                 $superCount = UserRole::where('role', 'super_admin')->count();
                 if ($superCount <= 1) {
@@ -481,9 +499,71 @@ class AdminController extends Controller
             if ($roleModel) {
                 $user->roles()->detach($roleModel->id);
             }
+            $this->logActivity('remove_role', "Retrait du rôle {$validated['role']} de {$user->identifier}", null, null);
         }
 
         return redirect('/admin/users')->with('success', 'Rôle mis à jour');
+    }
+
+    public function resetUserPassword(Request $request, string $id)
+    {
+        $user = User::findOrFail($id);
+
+        $token = app('auth.password.broker')->createToken($user);
+        $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
+
+        Mail::to($user->email)->send(new UserInvitation($user->identifier, $resetUrl, $user->full_name ?? ''));
+
+        $this->logActivity('reset_password', "Demande de réinitialisation du mot de passe pour {$user->identifier}", null, null);
+
+        return redirect('/admin/users')->with('success', "Email de réinitialisation envoyé à {$user->email}.");
+    }
+
+    public function userDetails(Request $request, string $id)
+    {
+        $user = User::with('userRoles')->findOrFail($id);
+        $logFilter = $request->get('log_action', '');
+
+        $logsQuery = ActivityLog::where('user_id', $user->id)->orderByDesc('created_at')->limit(100);
+        if ($logFilter) {
+            $logsQuery->where('action', $logFilter);
+        }
+        $logs = $logsQuery->get();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'user' => [
+                    'id' => $user->id,
+                    'identifier' => $user->identifier,
+                    'name' => $user->full_name ?? $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->userRoles->pluck('role'),
+                    'created_at' => $user->created_at->format('d/m/Y H:i'),
+                ],
+                'logs' => $logs->map(fn($log) => [
+                    'action' => $log->action,
+                    'description' => $log->description,
+                    'created_at' => $log->created_at->format('d/m/Y H:i'),
+                    'ip' => $log->ip_address,
+                ]),
+                'log_actions' => ActivityLog::where('user_id', $user->id)->distinct()->pluck('action'),
+            ]);
+        }
+
+        return redirect('/admin/users');
+    }
+
+    private function logActivity(string $action, ?string $description = null, ?string $modelType = null, ?string $modelId = null, ?array $metadata = null): void
+    {
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'description' => $description,
+            'model_type' => $modelType,
+            'model_id' => $modelId,
+            'ip_address' => request()->ip(),
+            'metadata' => $metadata,
+        ]);
     }
 
     // ==================== ROLES (Super Admin only) ====================

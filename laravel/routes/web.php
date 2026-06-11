@@ -8,6 +8,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AdminController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -30,6 +31,10 @@ Route::post('/suivi', [TrackController::class, 'search'])->name('track.search');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset
+Route::get('/password/reset/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [PasswordResetController::class, 'reset'])->name('password.update');
 
 // Claim first admin (doit être connecté mais pas forcément admin)
 Route::middleware(['auth'])->post('/admin/claim-first-admin', [AuthController::class, 'claimFirstAdmin'])->name('admin.claim');
@@ -77,6 +82,8 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
         Route::post('/users', [AdminController::class, 'storeUser']);
         Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
         Route::post('/users/{id}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role');
+        Route::post('/users/{id}/reset-password', [AdminController::class, 'resetUserPassword'])->name('admin.users.reset');
+        Route::get('/users/{id}/details', [AdminController::class, 'userDetails'])->name('admin.users.details');
 
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole']);
