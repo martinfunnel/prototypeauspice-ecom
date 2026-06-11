@@ -105,7 +105,7 @@
                 <div class="font-mono text-sm text-muted-foreground">/{{ $cat->slug }}</div>
                 <div class="text-right text-sm">{{ $cat->sort_order }}</div>
                 <div class="flex items-center justify-end gap-1">
-                    <button type="button" onclick="showDetail({{ json_encode([
+                    <button type="button" onclick="showDetail(this, {{ json_encode([
                         'id' => $cat->id,
                         'name' => $cat->name,
                         'slug' => $cat->slug,
@@ -126,7 +126,7 @@
                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                     @canDo('edit_categories')
-                    <button type="button" onclick="fillForm({{ json_encode([
+                    <button type="button" onclick="fillForm(this, {{ json_encode([
                         'id' => $cat->id,
                         'name' => $cat->name,
                         'slug' => $cat->slug,
@@ -152,91 +152,52 @@
     </div>
 @endif
 
-{{-- Modal détail catégorie --}}
-<div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 pt-20" onclick="if(event.target===this) closeDetail()">
-    <div class="w-full max-w-3xl rounded-2xl border border-border bg-card shadow-elevated p-6 max-h-[80vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-4">
-            <h2 id="detail-title" class="font-display text-xl font-bold">Détail catégorie</h2>
-            <button type="button" onclick="closeDetail()" class="grid h-8 w-8 place-items-center rounded-lg hover:bg-muted transition">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-
-        <div id="detail-content" class="space-y-5">
-            {{-- Infos catégorie --}}
-            <div class="flex items-start gap-4">
-                <img id="detail-image" src="" alt="" class="h-20 w-20 flex-shrink-0 rounded-xl object-cover border border-border">
-                <div>
-                    <p class="font-semibold text-lg" id="detail-name"></p>
-                    <p class="text-sm text-muted-foreground font-mono" id="detail-slug"></p>
-                    <p class="text-sm text-muted-foreground mt-1" id="detail-desc"></p>
-                    <div class="mt-2 flex gap-3 text-xs">
-                        <span class="rounded-full bg-muted px-2.5 py-1">Ordre : <span id="detail-order"></span></span>
-                        <span class="rounded-full bg-muted px-2.5 py-1">Produits : <span id="detail-count"></span></span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Produits --}}
-            <div>
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Produits dans cette catégorie</h3>
-                <div id="detail-products" class="overflow-hidden rounded-xl border border-border">
-                    <div class="hidden md:grid grid-cols-[60px_1fr_100px_80px_80px] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
-                        <div></div>
-                        <div>Nom</div>
-                        <div class="text-right">Prix</div>
-                        <div class="text-right">Stock</div>
-                        <div class="text-center">Statut</div>
-                    </div>
-                    <ul id="detail-products-list" class="divide-y divide-border"></ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-function showDetail(data) {
-    document.getElementById('detail-modal').classList.remove('hidden');
-    document.getElementById('detail-title').textContent = data.name;
-    document.getElementById('detail-name').textContent = data.name;
-    document.getElementById('detail-slug').textContent = '/' + data.slug;
-    document.getElementById('detail-desc').textContent = data.description || 'Aucune description';
-    document.getElementById('detail-order').textContent = data.sort_order;
-    document.getElementById('detail-count').textContent = data.product_count;
-
-    const img = document.getElementById('detail-image');
-    if (data.image_url) { img.src = data.image_url; img.classList.remove('hidden'); }
-    else { img.classList.add('hidden'); }
-
-    const list = document.getElementById('detail-products-list');
-    list.innerHTML = '';
-    if (!data.products || data.products.length === 0) {
-        list.innerHTML = '<li class="p-6 text-center text-sm text-muted-foreground">Aucun produit dans cette catégorie.</li>';
-    } else {
-        data.products.forEach(p => {
-            const li = document.createElement('li');
-            li.className = 'grid grid-cols-1 gap-2 px-3 py-2 md:grid-cols-[60px_1fr_100px_80px_80px] md:items-center';
-            const statusBadge = p.is_active
-                ? '<span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase text-green-800">Actif</span>'
-                : '<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-800">Masqué</span>';
-            li.innerHTML = `
-                <div>${p.image ? `<img src="${p.image}" alt="" class="h-10 w-10 rounded-lg object-cover">` : '<div class="h-10 w-10 rounded-lg bg-muted"></div>'}</div>
-                <div class="min-w-0">
-                    <div class="truncate text-sm font-medium">${p.name}</div>
-                    <div class="truncate text-xs text-muted-foreground font-mono">/${p.slug}</div>
-                </div>
-                <div class="text-right text-sm font-semibold">${p.price.toLocaleString('fr-FR')} FCFA</div>
-                <div class="text-right text-sm ${p.stock <= 3 ? 'text-destructive font-bold' : ''}">${p.stock}</div>
-                <div class="flex justify-center">${statusBadge}</div>
-            `;
-            list.appendChild(li);
-        });
+function showDetail(btn, data) {
+    const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('detail-panel')) {
+        panel.remove();
+        return;
     }
-}
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
 
-function closeDetail() {
-    document.getElementById('detail-modal').classList.add('hidden');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+
+    let html = '<div class="flex items-start gap-4 mb-3">';
+    if (data.image_url) {
+        html += '<img src="' + data.image_url + '" class="h-16 w-16 flex-shrink-0 rounded-xl object-cover border border-border">';
+    } else {
+        html += '<div class="h-16 w-16 flex-shrink-0 rounded-xl bg-muted"></div>';
+    }
+    html += '<div class="text-sm space-y-1">';
+    html += '<p class="font-semibold text-base">' + data.name + '</p>';
+    html += '<p class="font-mono text-muted-foreground">/' + data.slug + '</p>';
+    html += '<p class="text-muted-foreground">' + (data.description || 'Aucune description') + '</p>';
+    html += '<div class="flex gap-2 text-xs"><span class="rounded-full bg-muted px-2 py-1">Ordre : ' + data.sort_order + '</span><span class="rounded-full bg-muted px-2 py-1">Produits : ' + data.product_count + '</span></div>';
+    html += '</div></div>';
+
+    if (data.products && data.products.length) {
+        html += '<h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Produits dans cette catégorie</h4>';
+        html += '<div class="overflow-hidden rounded-xl border border-border"><div class="hidden md:grid grid-cols-[60px_1fr_100px_80px_80px] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-xs font-semibold uppercase text-muted-foreground"><div></div><div>Nom</div><div class="text-right">Prix</div><div class="text-right">Stock</div><div class="text-center">Statut</div></div><ul class="divide-y divide-border">';
+        data.products.forEach(p => {
+            const status = p.is_active ? '<span class="inline-flex rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success">Actif</span>' : '<span class="inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Masqué</span>';
+            html += '<li class="grid grid-cols-1 gap-2 px-3 py-2 md:grid-cols-[60px_1fr_100px_80px_80px] md:items-center">'
+                + '<div>' + (p.image ? '<img src="' + p.image + '" class="h-10 w-10 rounded-lg object-cover">' : '<div class="h-10 w-10 rounded-lg bg-muted"></div>') + '</div>'
+                + '<div class="min-w-0"><div class="truncate text-sm font-medium">' + p.name + '</div><div class="truncate text-xs text-muted-foreground font-mono">/' + p.slug + '</div></div>'
+                + '<div class="text-right text-sm font-semibold">' + Number(p.price).toLocaleString('fr-FR') + ' FCFA</div>'
+                + '<div class="text-right text-sm' + (p.stock <= 3 ? ' text-destructive font-bold' : '') + '">' + p.stock + '</div>'
+                + '<div class="flex justify-center">' + status + '</div>'
+                + '</li>';
+        });
+        html += '</ul></div>';
+    } else {
+        html += '<p class="text-sm text-muted-foreground">Aucun produit dans cette catégorie.</p>';
+    }
+
+    wrapper.innerHTML = html;
+    li.after(wrapper);
 }
 
 function toggleForm() {
@@ -267,26 +228,30 @@ function filterCategories() {
     });
 }
 
-function fillForm(data) {
-    const form = document.getElementById('category-form');
-    form.classList.remove('hidden');
-    document.getElementById('form-title').textContent = 'Modifier la catégorie';
-    document.getElementById('category-form-tag').action = '/admin/categories/' + data.id;
-    document.getElementById('method-override').value = 'PATCH';
+function fillForm(btn, data) {
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
+    const li = btn.closest('li');
 
-    document.getElementById('f-name').value = data.name;
-    document.getElementById('f-slug').value = data.slug;
-    document.getElementById('f-description').value = data.description;
-    document.getElementById('f-sort_order').value = data.sort_order;
-    document.getElementById('f-existing_image').value = data.image_url;
-
-    const preview = document.getElementById('f-image-preview');
-    preview.innerHTML = '';
-    if (data.image_url) {
-        preview.innerHTML = `<div class="relative"><img src="${data.image_url}" alt="" class="h-20 w-20 rounded-lg object-cover border border-border"><button type="button" onclick="removeImage()" class="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-destructive text-white text-xs font-bold">×</button></div>`;
-    }
-
-    form.scrollIntoView({ behavior: 'smooth' });
+    const wrapper = document.createElement('div');
+    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.innerHTML = '<h3 class="font-display text-sm font-bold mb-3">Modifier « ' + data.name + ' »</h3>'
+        + '<form action="/admin/categories/' + data.id + '" method="POST" enctype="multipart/form-data" class="space-y-3">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH">'
+        + '<input type="hidden" name="existing_image" value="' + (data.image_url ?? '') + '">'
+        + '<div class="grid gap-3 sm:grid-cols-2">'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Nom *</span><input type="text" name="name" required value="' + (data.name ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Slug</span><input type="text" name="slug" value="' + (data.slug ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '</div>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Description</span><textarea name="description" rows="3" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">' + (data.description ?? '') + '</textarea></label>'
+        + '<div class="grid gap-3 sm:grid-cols-2">'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Ordre d\'affichage *</span><input type="number" name="sort_order" required min="0" value="' + (data.sort_order ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<div class="block"><span class="mb-1 block text-xs font-semibold">Image (JPEG/PNG)</span><input type="file" name="image" accept="image/jpeg,image/png" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></div>'
+        + '</div>'
+        + '<div class="flex justify-end gap-2 border-t border-border pt-3 mt-2">'
+        + '<button type="button" onclick="this.closest(\'.edit-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
+        + '<button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Enregistrer</button>'
+        + '</div></form>';
+    li.after(wrapper);
 }
 
 function removeImage() {

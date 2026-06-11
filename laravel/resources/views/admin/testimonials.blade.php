@@ -77,7 +77,7 @@
 
             <div class="flex gap-1">
                 @canDo('edit_testimonials')
-                <button type="button" onclick="fillForm({{ json_encode([
+                <button type="button" onclick="fillForm(this, {{ json_encode([
                     'id' => $t->id,
                     'author_name' => $t->author_name,
                     'role' => $t->role ?? '',
@@ -105,88 +105,91 @@
     </div>
 @endif
 
-{{-- Modal formulaire --}}
-<div id="form-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10">
-    <div class="w-full max-w-2xl rounded-2xl border border-border bg-background p-6 shadow-elevated">
-        <div class="mb-4 flex items-center justify-between">
-            <h2 id="form-title" class="font-display text-xl font-bold">Nouveau témoignage</h2>
-            <button type="button" onclick="closeForm()" class="rounded-md p-1 hover:bg-muted transition">
-                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
+{{-- Inline form panel (moved by JS) --}}
+<div id="form-panel-container" class="mt-4"></div>
+<div id="testimonial-form-panel" class="hidden rounded-2xl border border-border bg-card p-6 shadow-card">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 id="form-title" class="font-display text-lg font-bold">Nouveau témoignage</h2>
+        <button type="button" onclick="closeForm()" class="rounded-md p-1 hover:bg-muted transition">
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <form id="testimonial-form" action="/admin/testimonials" method="POST" enctype="multipart/form-data" class="space-y-3">
+        @csrf
+        <input type="hidden" name="_method" id="method-override" value="">
+        <input type="hidden" name="remove_media" id="remove-media-flag" value="">
+
+        <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold">Note (1-5)</span>
+                <input type="number" name="rating" id="f-rating" min="1" max="5" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold">Ordre</span>
+                <input type="number" name="sort_order" id="f-sort_order" min="0" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold">Type média</span>
+                <select name="media_type" id="f-media_type" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                    <option value="image">Image</option>
+                    <option value="video">Vidéo</option>
+                </select>
+            </label>
         </div>
 
-        <form id="testimonial-form" action="/admin/testimonials" method="POST" enctype="multipart/form-data" class="space-y-4">
-            @csrf
-            <input type="hidden" name="_method" id="method-override" value="">
-            <input type="hidden" name="remove_media" id="remove-media-flag" value="">
-
-            <div class="grid gap-4 sm:grid-cols-3">
-                <label class="block">
-                    <span class="mb-1.5 block text-sm font-semibold">Note (1-5)</span>
-                    <input type="number" name="rating" id="f-rating" min="1" max="5" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
-                </label>
-                <label class="block">
-                    <span class="mb-1.5 block text-sm font-semibold">Ordre d'affichage</span>
-                    <input type="number" name="sort_order" id="f-sort_order" min="0" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
-                </label>
-                <label class="block">
-                    <span class="mb-1.5 block text-sm font-semibold">Type de média</span>
-                    <select name="media_type" id="f-media_type" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
-                        <option value="image">Image</option>
-                        <option value="video">Vidéo</option>
-                    </select>
-                </label>
-            </div>
-
-            <div class="block">
-                <span class="mb-1.5 block text-sm font-semibold">Image ou vidéo (JPEG/PNG/WebP, MP4/WebM/MOV — 25 Mo max)</span>
-                <input type="file" name="media" id="f-media" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onchange="previewMedia(this)" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
-
-                <div id="media-preview-container" class="mt-3 relative hidden">
-                    <div id="media-preview"></div>
-                    <button type="button" onclick="removeMedia()" class="absolute right-2 top-2 rounded-full bg-background/90 p-1.5 shadow hover:bg-background transition">
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                    </button>
-                </div>
-                <input type="hidden" name="existing_media_url" id="f-existing_media" value="">
-            </div>
-
-            <label class="inline-flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_active" id="f-is_active" value="1" checked class="rounded border-border">
-                Visible sur le site
-            </label>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <label class="block">
-                    <span class="mb-1.5 block text-sm font-semibold">Auteur *</span>
-                    <input type="text" name="author_name" id="f-author_name" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
-                </label>
-                <label class="block">
-                    <span class="mb-1.5 block text-sm font-semibold">Rôle</span>
-                    <input type="text" name="role" id="f-role" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
-                </label>
-            </div>
-
-            <label class="block">
-                <span class="mb-1.5 block text-sm font-semibold">Contenu *</span>
-                <textarea name="content" id="f-content" rows="3" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent"></textarea>
-            </label>
-
-            <div class="flex justify-end gap-2 border-t border-border pt-4">
-                <button type="button" onclick="closeForm()" class="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
-                <button type="submit" id="save-btn" class="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
-                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    Enregistrer
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold">Image ou vidéo</span>
+            <input type="file" name="media" id="f-media" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onchange="previewMedia(this)" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            <div id="media-preview-container" class="mt-3 relative hidden">
+                <div id="media-preview"></div>
+                <button type="button" onclick="removeMedia()" class="absolute right-2 top-2 rounded-full bg-background/90 p-1.5 shadow hover:bg-background transition">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
             </div>
-        </form>
-    </div>
+            <input type="hidden" name="existing_media_url" id="f-existing_media" value="">
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="is_active" id="f-is_active" value="1" checked class="rounded border-border">
+            Visible sur le site
+        </label>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold">Auteur *</span>
+                <input type="text" name="author_name" id="f-author_name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold">Rôle</span>
+                <input type="text" name="role" id="f-role" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+        </div>
+
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold">Contenu *</span>
+            <textarea name="content" id="f-content" rows="3" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
+        </label>
+
+        <div class="flex justify-end gap-2 border-t border-border pt-3">
+            <button type="button" onclick="closeForm()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
+            <button type="submit" id="save-btn" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
+        </div>
+    </form>
 </div>
 
 <script>
+function getPanel() {
+    return document.getElementById('testimonial-form-panel');
+}
+function getContainer() {
+    return document.getElementById('form-panel-container');
+}
+
 function openForm() {
-    const modal = document.getElementById('form-modal');
-    modal.classList.remove('hidden');
+    closeForm();
+    const panel = getPanel();
+    getContainer().appendChild(panel);
+    panel.classList.remove('hidden');
     document.getElementById('form-title').textContent = 'Nouveau témoignage';
     document.getElementById('testimonial-form').action = '/admin/testimonials';
     document.getElementById('method-override').value = '';
@@ -201,11 +204,16 @@ function openForm() {
     document.getElementById('media-preview-container').classList.add('hidden');
     document.getElementById('media-preview').innerHTML = '';
     document.getElementById('remove-media-flag').value = '';
+    panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-function fillForm(data) {
-    const modal = document.getElementById('form-modal');
-    modal.classList.remove('hidden');
+function fillForm(btn, data) {
+    closeForm();
+    const card = btn.closest('.testimonial-row');
+    const panel = getPanel();
+    card.after(panel);
+    panel.classList.remove('hidden');
+
     document.getElementById('form-title').textContent = 'Modifier le témoignage';
     document.getElementById('testimonial-form').action = '/admin/testimonials/' + data.id;
     document.getElementById('method-override').value = 'PATCH';
@@ -224,9 +232,9 @@ function fillForm(data) {
     if (data.media_url) {
         previewContainer.classList.remove('hidden');
         if (data.media_type === 'video') {
-            preview.innerHTML = `<video src="${data.media_url}" controls class="max-h-56 w-full rounded-lg border border-border"></video>`;
+            preview.innerHTML = '<video src="' + data.media_url + '" controls class="max-h-56 w-full rounded-lg border border-border"></video>';
         } else {
-            preview.innerHTML = `<img src="${data.media_url}" alt="" class="max-h-56 w-full rounded-lg border border-border object-cover">`;
+            preview.innerHTML = '<img src="' + data.media_url + '" alt="" class="max-h-56 w-full rounded-lg border border-border object-cover">';
         }
     } else {
         previewContainer.classList.add('hidden');
@@ -236,7 +244,9 @@ function fillForm(data) {
 }
 
 function closeForm() {
-    document.getElementById('form-modal').classList.add('hidden');
+    const panel = getPanel();
+    panel.classList.add('hidden');
+    getContainer().appendChild(panel);
 }
 
 function previewMedia(input) {
@@ -249,9 +259,9 @@ function previewMedia(input) {
         const preview = document.getElementById('media-preview');
         container.classList.remove('hidden');
         if (file.type.startsWith('video/')) {
-            preview.innerHTML = `<video src="${url}" controls class="max-h-56 w-full rounded-lg border border-border"></video>`;
+            preview.innerHTML = '<video src="' + url + '" controls class="max-h-56 w-full rounded-lg border border-border"></video>';
         } else {
-            preview.innerHTML = `<img src="${url}" alt="" class="max-h-56 w-full rounded-lg border border-border object-cover">`;
+            preview.innerHTML = '<img src="' + url + '" alt="" class="max-h-56 w-full rounded-lg border border-border object-cover">';
         }
     };
     reader.readAsDataURL(file);
@@ -264,11 +274,6 @@ function removeMedia() {
     document.querySelector('input[name="media"]').value = '';
     document.getElementById('remove-media-flag').value = '1';
 }
-
-// Fermer avec Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeForm();
-});
 
 function filterTestimonials() {
     const q = document.getElementById('search-testimonials').value.toLowerCase();

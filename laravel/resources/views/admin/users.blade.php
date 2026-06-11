@@ -46,7 +46,7 @@ $isSuper = auth()->user()->isSuperAdmin();
     <div class="flex items-center gap-3">
         <span class="text-xs text-muted-foreground">{{ $users->count() }} utilisateur(s)</span>
         @if($isSuper)
-        <button type="button" onclick="openCreateModal()" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+        <button type="button" onclick="openCreatePanel()" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
             Nouveau compte
         </button>
@@ -115,7 +115,7 @@ $isSuper = auth()->user()->isSuperAdmin();
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-1">
                             {{-- Voir --}}
-                            <button type="button" onclick="showUserDetails('{{ $u->id }}')" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
+                            <button type="button" onclick="showUserDetails(this, '{{ $u->id }}')" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                             @if($isSuper && $u->id !== auth()->id())
@@ -143,195 +143,112 @@ $isSuper = auth()->user()->isSuperAdmin();
     </div>
 @endif
 
-{{-- Modal Création --}}
-<div id="create-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onclick="if(event.target===this) closeCreateModal()">
-    <form action="/admin/users" method="POST" onclick="event.stopPropagation()" class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card">
-        @csrf
-        <div class="mb-4 flex items-center justify-between">
-            <h2 class="font-display text-lg font-bold">Nouveau compte</h2>
-            <button type="button" onclick="closeCreateModal()" class="rounded-md p-1 hover:bg-muted transition">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-        <p class="mb-4 text-xs text-muted-foreground">
-            Le système génère un identifiant unique et envoie un email d'invitation avec un lien pour définir le mot de passe.
-        </p>
-        <div class="space-y-3">
-            <label class="block">
-                <span class="mb-1 block text-xs font-medium">Nom complet (optionnel)</span>
-                <input type="text" name="full_name" placeholder="Ex. Jean Kouassi" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-medium">Email *</span>
-                <input type="email" name="email" required placeholder="jean@exemple.com" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-medium">Rôle initial</span>
-                <select name="role" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-                    @foreach($availableRoles as $role)
-                    <option value="{{ $role }}">{{ ucfirst(str_replace('_', ' ', $role)) }}</option>
-                    @endforeach
-                </select>
-            </label>
-        </div>
-        <button type="submit" class="mt-5 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
-            Créer le compte & envoyer l'invitation
+{{-- Inline create panel --}}
+<div id="create-panel" class="hidden mt-4 rounded-2xl border border-border bg-card p-6 shadow-card">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 class="font-display text-lg font-bold">Nouveau compte</h2>
+        <button type="button" onclick="closeCreatePanel()" class="rounded-md p-1 hover:bg-muted transition">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
+    </div>
+    <p class="mb-4 text-xs text-muted-foreground">Le système génère un identifiant unique et envoie un email d'invitation avec un lien pour définir le mot de passe.</p>
+    <form action="/admin/users" method="POST" class="max-w-md space-y-3">
+        @csrf
+        <label class="block">
+            <span class="mb-1 block text-xs font-medium">Nom complet (optionnel)</span>
+            <input type="text" name="full_name" placeholder="Ex. Jean Kouassi" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-medium">Email *</span>
+            <input type="email" name="email" required placeholder="jean@exemple.com" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-medium">Rôle initial</span>
+            <select name="role" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                @foreach($availableRoles as $role)
+                <option value="{{ $role }}">{{ ucfirst(str_replace('_', ' ', $role)) }}</option>
+                @endforeach
+            </select>
+        </label>
+        <button type="submit" class="mt-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Créer le compte & envoyer l'invitation</button>
     </form>
 </div>
 
-{{-- Modal Détails utilisateur --}}
-<div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10" onclick="if(event.target===this) closeDetailModal()">
-    <div class="w-full max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-elevated">
-        <div class="mb-4 flex items-center justify-between">
-            <h2 id="detail-title" class="font-display text-xl font-bold">Détail utilisateur</h2>
-            <button type="button" onclick="closeDetailModal()" class="rounded-md p-1 hover:bg-muted transition">
-                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-
-        <div id="detail-content" class="space-y-5">
-            {{-- Infos user --}}
-            <div class="rounded-xl border border-border bg-muted/30 p-4">
-                <div class="grid gap-2 text-sm">
-                    <div class="flex gap-2"><span class="text-muted-foreground w-24">Identifiant :</span><span id="detail-identifier" class="font-mono font-semibold"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-24">Nom :</span><span id="detail-name"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-24">Email :</span><span id="detail-email"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-24">Créé le :</span><span id="detail-created"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-24">Rôles :</span><span id="detail-roles" class="flex flex-wrap gap-1"></span></div>
-                </div>
-            </div>
-
-            {{-- Logs --}}
-            <div>
-                <div class="mb-3 flex items-center justify-between">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Journal d'activité</h3>
-                    <select id="log-filter" onchange="filterLogs()" class="rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none">
-                        <option value="">Toutes les actions</option>
-                    </select>
-                </div>
-                <div id="logs-container" class="overflow-hidden rounded-xl border border-border">
-                    <div class="hidden md:grid grid-cols-[140px_1fr_100px_120px] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
-                        <div>Date</div>
-                        <div>Action</div>
-                        <div>IP</div>
-                        <div>Détails</div>
-                    </div>
-                    <ul id="logs-list" class="divide-y divide-border"></ul>
-                </div>
-                <p id="logs-empty" class="hidden p-6 text-center text-sm text-muted-foreground">Aucune activité enregistrée.</p>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-let currentUserId = null;
 let allLogs = [];
 let logActions = [];
 
-function openCreateModal() {
-    document.getElementById('create-modal').classList.remove('hidden');
+function openCreatePanel() {
+    document.getElementById('create-panel').classList.remove('hidden');
 }
-function closeCreateModal() {
-    document.getElementById('create-modal').classList.add('hidden');
-}
-function closeDetailModal() {
-    document.getElementById('detail-modal').classList.add('hidden');
+function closeCreatePanel() {
+    document.getElementById('create-panel').classList.add('hidden');
 }
 
-async function showUserDetails(userId) {
-    currentUserId = userId;
-    const modal = document.getElementById('detail-modal');
-    modal.classList.remove('hidden');
+function removeDetailRows() {
+    document.querySelectorAll('.user-detail-row').forEach(el => el.remove());
+}
 
-    // Reset content
-    document.getElementById('detail-identifier').textContent = 'Chargement…';
-    document.getElementById('logs-list').innerHTML = '';
+async function showUserDetails(btn, userId) {
+    const tr = btn.closest('tr');
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains('user-detail-row')) {
+        next.remove();
+        return;
+    }
+    removeDetailRows();
+
+    const colspan = {{ count($availableRoles) + 2 }};
+    const detailTr = document.createElement('tr');
+    detailTr.className = 'user-detail-row border-t border-border';
+    detailTr.innerHTML = '<td colspan="' + colspan + '" class="px-4 py-4 bg-muted/20"><div class="text-sm text-muted-foreground">Chargement…</div></td>';
+    tr.after(detailTr);
 
     try {
         const res = await fetch('/admin/users/' + userId + '/details');
         const data = await res.json();
 
-        document.getElementById('detail-title').textContent = data.user.name || 'Détail utilisateur';
-        document.getElementById('detail-identifier').textContent = data.user.identifier;
-        document.getElementById('detail-name').textContent = data.user.name || '—';
-        document.getElementById('detail-email').textContent = data.user.email;
-        document.getElementById('detail-created').textContent = data.user.created_at;
-
-        const rolesContainer = document.getElementById('detail-roles');
-        rolesContainer.innerHTML = '';
+        let rolesHtml = '';
         data.user.roles.forEach(r => {
-            const span = document.createElement('span');
-            span.className = 'inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent';
-            span.textContent = r;
-            rolesContainer.appendChild(span);
+            rolesHtml += '<span class="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">' + r + '</span>';
         });
 
+        let logsHtml = '';
         allLogs = data.logs;
         logActions = data.log_actions;
-        renderLogs();
-        populateLogFilter();
+        const hasLogs = allLogs && allLogs.length;
+        if (hasLogs) {
+            logsHtml = '<h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Journal d\'activité</h4>'
+                + '<div class="overflow-hidden rounded-xl border border-border">'
+                + '<div class="hidden md:grid grid-cols-[140px_1fr_100px_120px] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-xs font-semibold uppercase text-muted-foreground"><div>Date</div><div>Action</div><div>IP</div><div>Détails</div></div>'
+                + '<ul class="divide-y divide-border">';
+            allLogs.forEach(log => {
+                logsHtml += '<li class="grid grid-cols-1 gap-1 px-3 py-2 md:grid-cols-[140px_1fr_100px_120px] md:items-center">'
+                    + '<div class="text-xs text-muted-foreground">' + log.created_at + '</div>'
+                    + '<div class="text-xs font-semibold uppercase text-accent">' + log.action + '</div>'
+                    + '<div class="text-xs text-muted-foreground font-mono">' + (log.ip || '—') + '</div>'
+                    + '<div class="text-xs text-muted-foreground">' + (log.description || '—') + '</div>'
+                    + '</li>';
+            });
+            logsHtml += '</ul></div>';
+        } else {
+            logsHtml = '<p class="text-sm text-muted-foreground">Aucune activité enregistrée.</p>';
+        }
+
+        detailTr.querySelector('td').innerHTML = '<div class="space-y-4">'
+            + '<div class="rounded-xl border border-border bg-muted/30 p-4">'
+            + '<div class="grid gap-2 text-sm">'
+            + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Identifiant :</span><span class="font-mono font-semibold">' + data.user.identifier + '</span></div>'
+            + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Nom :</span><span>' + (data.user.name || '—') + '</span></div>'
+            + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Email :</span><span>' + data.user.email + '</span></div>'
+            + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Créé le :</span><span>' + data.user.created_at + '</span></div>'
+            + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Rôles :</span><span class="flex flex-wrap gap-1">' + rolesHtml + '</span></div>'
+            + '</div></div>'
+            + logsHtml
+            + '</div>';
     } catch (e) {
-        document.getElementById('detail-identifier').textContent = 'Erreur de chargement';
+        detailTr.querySelector('td').innerHTML = '<div class="text-sm text-destructive">Erreur de chargement</div>';
     }
 }
-
-function populateLogFilter() {
-    const select = document.getElementById('log-filter');
-    const current = select.value;
-    select.innerHTML = '<option value="">Toutes les actions</option>';
-    logActions.forEach(action => {
-        const opt = document.createElement('option');
-        opt.value = action;
-        opt.textContent = action;
-        select.appendChild(opt);
-    });
-    select.value = current;
-}
-
-function filterLogs() {
-    renderLogs();
-}
-
-function renderLogs() {
-    const filter = document.getElementById('log-filter').value;
-    const list = document.getElementById('logs-list');
-    const empty = document.getElementById('logs-empty');
-    const container = document.getElementById('logs-container');
-
-    const filtered = filter ? allLogs.filter(l => l.action === filter) : allLogs;
-
-    if (filtered.length === 0) {
-        list.innerHTML = '';
-        container.classList.add('hidden');
-        empty.classList.remove('hidden');
-        return;
-    }
-
-    container.classList.remove('hidden');
-    empty.classList.add('hidden');
-    list.innerHTML = '';
-
-    filtered.forEach(log => {
-        const li = document.createElement('li');
-        li.className = 'grid grid-cols-1 gap-1 px-3 py-2 md:grid-cols-[140px_1fr_100px_120px] md:items-center';
-        li.innerHTML = `
-            <div class="text-xs text-muted-foreground">${log.created_at}</div>
-            <div class="text-xs font-semibold uppercase text-accent">${log.action}</div>
-            <div class="text-xs text-muted-foreground font-mono">${log.ip || '—'}</div>
-            <div class="text-xs text-muted-foreground">${log.description || '—'}</div>
-        `;
-        list.appendChild(li);
-    });
-}
-
-// Escape to close
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeCreateModal();
-        closeDetailModal();
-    }
-});
 </script>
 @endsection

@@ -88,7 +88,7 @@
                 </div>
                 <div class="flex items-center justify-end gap-1">
                     {{-- Voir --}}
-                    <button type="button" onclick="showProductDetail({{ json_encode([
+                    <button type="button" onclick="showProductDetail(this, {{ json_encode([
                         'id' => $p->id,
                         'name' => $p->name,
                         'slug' => $p->slug,
@@ -135,7 +135,7 @@
                         </button>
                     </form>
                     {{-- Promo --}}
-                    <button type="button" onclick="openPromoModal({{ json_encode([
+                    <button type="button" onclick="openPromoInline(this, {{ json_encode([
                         'id' => $p->id,
                         'name' => $p->name,
                         'promo_price' => $p->promo_price ?? '',
@@ -144,7 +144,7 @@
                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
                     </button>
                     {{-- Edit --}}
-                    <button type="button" onclick="fillForm({{ json_encode([
+                    <button type="button" onclick="fillForm(this, {{ json_encode([
                         'id' => $p->id,
                         'name' => $p->name,
                         'slug' => $p->slug,
@@ -333,151 +333,191 @@ function filterProducts() {
     });
 }
 
-function showProductDetail(data) {
-    document.getElementById('detail-modal').classList.remove('hidden');
-    document.getElementById('detail-title').textContent = data.name;
-    document.getElementById('detail-slug').textContent = '/' + data.slug;
-    document.getElementById('detail-desc').textContent = data.description || data.short_description || 'Aucune description';
-    document.getElementById('detail-category').textContent = data.category_name;
-    document.getElementById('detail-price').textContent = Number(data.price).toLocaleString('fr-FR') + ' FCFA';
-    document.getElementById('detail-stock').textContent = data.stock;
-    document.getElementById('detail-status').textContent = data.is_active ? 'Actif' : 'Masqué';
-    document.getElementById('detail-status-badge').className = 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ' + (data.is_active ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground');
-    document.getElementById('detail-popular').style.display = data.is_popular ? '' : 'none';
+function showProductDetail(btn, data) {
+    const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('detail-panel')) {
+        panel.remove();
+        return;
+    }
+    // close other panels
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => el.remove());
 
-    const promoEl = document.getElementById('detail-promo');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+
+    let html = '<div class="grid gap-4 md:grid-cols-2">';
+    html += '<div class="space-y-2 text-sm">';
+    html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Slug :</span><span class="font-mono text-muted-foreground">/' + data.slug + '</span></div>';
+    html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Catégorie :</span><span>' + data.category_name + '</span></div>';
+    html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Prix :</span><span class="font-semibold">' + Number(data.price).toLocaleString('fr-FR') + ' FCFA</span></div>';
+    html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Stock :</span><span>' + data.stock + '</span></div>';
+    html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Statut :</span><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ' + (data.is_active ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground') + '">' + (data.is_active ? 'Actif' : 'Masqué') + '</span>' + (data.is_popular ? ' <span class="ml-1 inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">★ Populaire</span>' : '') + '</span></div>';
     if (data.promo_price && data.promo_price < data.price) {
-        promoEl.classList.remove('hidden');
-        document.getElementById('detail-promo-price').textContent = Number(data.promo_price).toLocaleString('fr-FR') + ' FCFA';
-        document.getElementById('detail-promo-ends').textContent = data.promo_ends_at || '—';
-    } else {
-        promoEl.classList.add('hidden');
+        html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Promo :</span><span class="text-accent font-semibold">' + Number(data.promo_price).toLocaleString('fr-FR') + ' FCFA <span class="text-xs text-muted-foreground font-normal">(jusqu\'au ' + (data.promo_ends_at || '—') + ')</span></span></div>';
     }
-
-    const benefitsEl = document.getElementById('detail-benefits');
-    benefitsEl.innerHTML = '';
+    html += '</div>';
+    html += '<div>';
+    if (data.description || data.short_description) {
+        html += '<h4 class="text-xs font-semibold uppercase text-muted-foreground mb-1">Description</h4>';
+        html += '<p class="text-sm text-muted-foreground">' + (data.description || data.short_description) + '</p>';
+    }
     if (data.benefits && data.benefits.length) {
+        html += '<h4 class="text-xs font-semibold uppercase text-muted-foreground mt-2 mb-1">Avantages</h4>';
+        html += '<ul class="space-y-1">';
         data.benefits.forEach(b => {
-            const li = document.createElement('li');
-            li.className = 'flex items-center gap-1 text-sm text-muted-foreground';
-            li.innerHTML = '<svg class="h-3.5 w-3.5 text-accent" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' + b;
-            benefitsEl.appendChild(li);
+            html += '<li class="flex items-center gap-1 text-sm text-muted-foreground"><svg class="h-3.5 w-3.5 text-accent shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' + b + '</li>';
         });
-        document.getElementById('detail-benefits-section').classList.remove('hidden');
-    } else {
-        document.getElementById('detail-benefits-section').classList.add('hidden');
+        html += '</ul>';
     }
+    html += '</div></div>';
 
-    // Images
-    const gallery = document.getElementById('detail-images');
-    gallery.innerHTML = '';
     if (data.images && data.images.length) {
-        data.images.forEach(url => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.className = 'h-20 w-20 rounded-lg object-cover border border-border';
-            gallery.appendChild(img);
-        });
+        html += '<div class="mt-3"><h4 class="text-xs font-semibold uppercase text-muted-foreground mb-1">Images produit</h4><div class="flex flex-wrap gap-2">';
+        data.images.forEach(url => { html += '<img src="' + url + '" class="h-16 w-16 rounded-lg object-cover border border-border">'; });
+        html += '</div></div>';
     }
-    document.getElementById('detail-images-section').style.display = (data.images && data.images.length) ? '' : 'none';
-
-    const detailGallery = document.getElementById('detail-detail-images');
-    detailGallery.innerHTML = '';
     if (data.detail_images && data.detail_images.length) {
-        data.detail_images.forEach(url => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.className = 'h-20 w-20 rounded-lg object-cover border border-border';
-            detailGallery.appendChild(img);
-        });
+        html += '<div class="mt-3"><h4 class="text-xs font-semibold uppercase text-muted-foreground mb-1">Images détails</h4><div class="flex flex-wrap gap-2">';
+        data.detail_images.forEach(url => { html += '<img src="' + url + '" class="h-16 w-16 rounded-lg object-cover border border-border">'; });
+        html += '</div></div>';
     }
-    document.getElementById('detail-detail-images-section').style.display = (data.detail_images && data.detail_images.length) ? '' : 'none';
+
+    wrapper.innerHTML = html;
+    li.after(wrapper);
 }
 
-function closeDetailModal() {
-    document.getElementById('detail-modal').classList.add('hidden');
+function openPromoInline(btn, data) {
+    const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('promo-panel')) {
+        panel.remove();
+        return;
+    }
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => el.remove());
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'promo-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.innerHTML = '<form action="/admin/products/' + data.id + '/promo" method="POST" class="flex flex-wrap items-end gap-3">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}">'
+        + '<label class="block"><span class="text-xs font-semibold">Prix promo</span><input type="number" name="promo_price" value="' + (data.promo_price ?? '') + '" min="0" class="mt-1 w-40 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="text-xs font-semibold">Fin promo</span><input type="datetime-local" name="promo_ends_at" value="' + (data.promo_ends_at ?? '') + '" class="mt-1 w-48 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Appliquer</button>'
+        + '<button type="button" onclick="this.closest(\'.promo-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
+        + '</form>';
+    li.after(wrapper);
 }
 
-function openPromoModal(data) {
-    document.getElementById('promo-modal').classList.remove('hidden');
-    document.getElementById('promo-form').action = '/admin/products/' + data.id + '/promo';
-    document.getElementById('promo-product-name').textContent = data.name;
-    document.getElementById('promo-price').value = data.promo_price ?? '';
-    document.getElementById('promo-ends').value = data.promo_ends_at ?? '';
-}
+function fillForm(btn, data) {
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => el.remove());
+    const li = btn.closest('li');
 
-function closePromoModal() {
-    document.getElementById('promo-modal').classList.add('hidden');
+    // build inline edit panel
+    const wrapper = document.createElement('div');
+    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.innerHTML = '<h3 class="font-display text-sm font-bold mb-3">Modifier « ' + data.name + ' »</h3>'
+        + '<form action="/admin/products/' + data.id + '" method="POST" enctype="multipart/form-data" class="space-y-3">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH">'
+        + '<div class="grid gap-3 sm:grid-cols-2">'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Nom *</span><input type="text" name="name" required value="' + (data.name ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Slug</span><input type="text" name="slug" value="' + (data.slug ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '</div>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Description courte</span><input type="text" name="short_description" maxlength="300" value="' + (data.short_description ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Description complète</span><textarea name="description" rows="3" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">' + (data.description ?? '') + '</textarea></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Avantages (un par ligne)</span><textarea name="benefits" rows="3" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">' + (data.benefits ?? '') + '</textarea></label>'
+        + '<div class="grid gap-3 sm:grid-cols-4">'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Prix *</span><input type="number" name="price" required min="0" value="' + (data.price ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Prix promo</span><input type="number" name="promo_price" min="0" value="' + (data.promo_price ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Stock *</span><input type="number" name="stock" required min="0" value="' + (data.stock ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Catégorie</span><select name="category_id" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">'
+        + '<option value="">— Aucune —</option>'
+        + '@foreach($categories as $c)'
+        + '<option value="{{ $c->id }}" ' + (data.category_id == '{{ $c->id }}' ? 'selected' : '') + '>{{ $c->name }}</option>'
+        + '@endforeach'
+        + '</select></label>'
+        + '</div>'
+        + '<div class="flex flex-wrap gap-4 pt-1">'
+        + '<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" ' + (data.is_active ? 'checked' : '') + ' class="rounded border-border"> Actif</label>'
+        + '<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_popular" value="1" ' + (data.is_popular ? 'checked' : '') + ' class="rounded border-border"> Mis en avant</label>'
+        + '</div>'
+        + '<div class="flex justify-end gap-2 border-t border-border pt-3 mt-2">'
+        + '<button type="button" onclick="this.closest(\'.edit-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
+        + '<button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Enregistrer</button>'
+        + '</div></form>';
+    li.after(wrapper);
 }
 </script>
 
-{{-- Modal Détail Produit --}}
-<div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10" onclick="if(event.target===this) closeDetailModal()">
-    <div class="w-full max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-elevated">
-        <div class="mb-4 flex items-center justify-between">
-            <h2 id="detail-title" class="font-display text-xl font-bold"></h2>
-            <button type="button" onclick="closeDetailModal()" class="rounded-md p-1 hover:bg-muted transition">
-                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-        <div class="space-y-5">
-            <div class="flex items-start gap-4 rounded-xl border border-border bg-muted/30 p-4">
-                <div class="flex-1 grid gap-2 text-sm">
-                    <div class="flex gap-2"><span class="text-muted-foreground w-28">Slug :</span><span id="detail-slug" class="font-mono text-muted-foreground"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-28">Catégorie :</span><span id="detail-category"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-28">Prix :</span><span id="detail-price" class="font-semibold"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-28">Stock :</span><span id="detail-stock"></span></div>
-                    <div class="flex gap-2"><span class="text-muted-foreground w-28">Statut :</span><span id="detail-status-badge"><span id="detail-status"></span></span> <span id="detail-popular" class="ml-1 inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">★ Populaire</span></div>
-                    <div id="detail-promo" class="hidden flex gap-2"><span class="text-muted-foreground w-28">Promo :</span><span class="text-accent font-semibold"><span id="detail-promo-price"></span> <span class="text-xs text-muted-foreground font-normal">(jusqu'au <span id="detail-promo-ends"></span>)</span></span></div>
-                </div>
-            </div>
-            <div>
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Description</h3>
-                <p id="detail-desc" class="text-sm text-muted-foreground leading-relaxed"></p>
-            </div>
-            <div id="detail-benefits-section" class="hidden">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Avantages</h3>
-                <ul id="detail-benefits" class="space-y-1"></ul>
-            </div>
-            <div id="detail-images-section">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Images produit</h3>
-                <div id="detail-images" class="flex flex-wrap gap-2"></div>
-            </div>
-            <div id="detail-detail-images-section">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Images détails</h3>
-                <div id="detail-detail-images" class="flex flex-wrap gap-2"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Modal Promotion --}}
-<div id="promo-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onclick="if(event.target===this) closePromoModal()">
-    <form id="promo-form" action="" method="POST" onclick="event.stopPropagation()" class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card">
+{{-- Hidden template for new product form (kept at bottom) --}}
+<div id="product-form" class="hidden mt-6 rounded-2xl border border-border bg-card shadow-card p-5">
+    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouveau produit</h2>
+    <form id="product-form-tag" action="/admin/products" method="POST" enctype="multipart/form-data" class="space-y-3">
         @csrf
-        <div class="mb-4 flex items-center justify-between">
-            <h2 class="font-display text-lg font-bold">Promotion</h2>
-            <button type="button" onclick="closePromoModal()" class="rounded-md p-1 hover:bg-muted transition">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-        </div>
-        <p class="mb-4 text-xs text-muted-foreground">Produit : <strong id="promo-product-name"></strong></p>
-        <div class="space-y-3">
+        <div class="grid gap-3 sm:grid-cols-2">
             <label class="block">
-                <span class="mb-1 block text-xs font-semibold">Prix promotionnel (FCFA)</span>
-                <input type="number" name="promo_price" id="promo-price" min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
+                <input type="text" name="name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
             </label>
             <label class="block">
-                <span class="mb-1 block text-xs font-semibold">Fin de la promotion</span>
-                <input type="datetime-local" name="promo_ends_at" id="promo-ends" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slug</span>
+                <input type="text" name="slug" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
             </label>
         </div>
-        <button type="submit" class="mt-5 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
-            Appliquer la promotion
-        </button>
-        <button type="button" onclick="document.getElementById('promo-price').value='';document.getElementById('promo-ends').value='';" class="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2 text-sm transition hover:bg-muted">
-            Retirer la promotion
-        </button>
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description courte</span>
+            <input type="text" name="short_description" maxlength="300" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description complète</span>
+            <textarea name="description" rows="4" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avantages (un par ligne)</span>
+            <textarea name="benefits" rows="4" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
+        </label>
+        <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix (FCFA) *</span>
+                <input type="number" name="price" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix promo</span>
+                <input type="number" name="promo_price" min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stock *</span>
+                <input type="number" name="stock" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+        </div>
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catégorie</span>
+            <select name="category_id" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                <option value="">— Aucune —</option>
+                @foreach($categories as $c)
+                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+            </select>
+        </label>
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images du produit (JPEG/PNG)</span>
+            <input type="file" name="product_images[]" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </div>
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images détails (JPEG/PNG)</span>
+            <input type="file" name="detail_product_images[]" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </div>
+        <div class="flex flex-wrap gap-4 pt-1">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="is_active" value="1" checked class="rounded border-border"> Actif (visible)
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="is_popular" value="1" class="rounded border-border"> Mis en avant
+            </label>
+        </div>
+        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
+            <button type="button" onclick="document.getElementById('product-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
+            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
+        </div>
     </form>
 </div>
 @endsection
