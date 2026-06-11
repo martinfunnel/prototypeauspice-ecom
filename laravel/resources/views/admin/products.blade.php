@@ -7,8 +7,32 @@
     <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
 @endif
 
-{{-- Bouton Nouveau produit --}}
-<div class="mb-4 flex justify-end">
+{{-- Stats cards --}}
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Produits</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $products->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actifs</p>
+        <p class="mt-1 font-display text-2xl font-bold text-success">{{ $products->where('is_active', true)->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stock faible</p>
+        <p class="mt-1 font-display text-2xl font-bold text-warning">{{ $products->where('stock', '<=', 3)->where('is_active', true)->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mis en avant</p>
+        <p class="mt-1 font-display text-2xl font-bold text-accent">{{ $products->where('is_popular', true)->count() }}</p>
+    </div>
+</div>
+
+{{-- Search + button --}}
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="relative w-full sm:max-w-sm">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search-products" oninput="filterProducts()" placeholder="Rechercher un produit…" class="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm shadow-sm outline-none focus:border-accent">
+    </div>
     <button type="button" onclick="document.getElementById('product-form').classList.toggle('hidden'); document.getElementById('form-title').textContent = 'Nouveau produit'; document.getElementById('product-form-tag').action = '/admin/products'; document.getElementById('method-override').value = '';" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Nouveau produit
@@ -31,7 +55,7 @@
         </div>
         <ul class="divide-y divide-border">
             @foreach($products as $p)
-            <li class="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[1fr_120px_100px_120px_100px] md:items-center">
+            <li class="product-row grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[1fr_120px_100px_120px_100px] md:items-center">
                 <div class="flex items-center gap-3 min-w-0">
                     @if(!empty($p->images[0]))
                         <img src="{{ $p->images[0] }}" alt="" class="h-12 w-12 flex-shrink-0 rounded-lg object-cover">
@@ -242,6 +266,15 @@ function fillForm(data) {
     document.getElementById('f-is_popular').checked = data.is_popular;
 
     form.scrollIntoView({ behavior: 'smooth' });
+}
+
+function filterProducts() {
+    const q = document.getElementById('search-products').value.toLowerCase();
+    const items = document.querySelectorAll('.product-row');
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? '' : 'none';
+    });
 }
 </script>
 @endsection

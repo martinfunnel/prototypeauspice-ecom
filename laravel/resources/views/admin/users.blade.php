@@ -14,6 +14,30 @@
 $isSuper = auth()->user()->isSuperAdmin();
 @endphp
 
+{{-- Stats cards --}}
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Utilisateurs</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $users->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Super Admins</p>
+        <p class="mt-1 font-display text-2xl font-bold text-accent">{{ $users->filter(fn($u) => $u->userRoles->contains('role', 'super_admin'))->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admins</p>
+        <p class="mt-1 font-display text-2xl font-bold text-primary">{{ $users->filter(fn($u) => $u->userRoles->contains('role', 'admin'))->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vendeurs</p>
+        <p class="mt-1 font-display text-2xl font-bold text-success">{{ $users->filter(fn($u) => $u->userRoles->contains('role', 'vendeur'))->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Comptables</p>
+        <p class="mt-1 font-display text-2xl font-bold text-muted-foreground">{{ $users->filter(fn($u) => $u->userRoles->contains('role', 'comptable'))->count() }}</p>
+    </div>
+</div>
+
 {{-- Search + actions --}}
 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <form action="/admin/users" method="GET" class="w-full sm:max-w-sm">

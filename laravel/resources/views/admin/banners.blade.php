@@ -7,6 +7,22 @@
     <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
 @endif
 
+{{-- Stats --}}
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bannière</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $banner ? 'Configurée' : 'Non définie' }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Statut</p>
+        <p class="mt-1 font-display text-2xl font-bold {{ ($banner->is_active ?? false) ? 'text-success' : 'text-muted-foreground' }}">{{ ($banner->is_active ?? false) ? 'Active' : 'Inactive' }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ ($banner->image_url ?? '') ? 'Oui' : 'Non' }}</p>
+    </div>
+</div>
+
 <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
     {{-- Formulaire --}}
     <div class="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-card">

@@ -7,12 +7,71 @@
     <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
 @endif
 
-{{-- Bouton Nouvelle catégorie --}}
-<div class="mb-4 flex justify-end">
-    <button type="button" onclick="document.getElementById('category-form').classList.toggle('hidden'); document.getElementById('form-title').textContent = 'Nouvelle catégorie'; document.getElementById('category-form-tag').action = '/admin/categories'; document.getElementById('method-override').value = ''; document.getElementById('f-image-preview').innerHTML = ''; document.getElementById('f-existing_image').value = '';" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+{{-- Stats cards --}}
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catégories</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $categories->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Produits</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $categories->sum(fn($c) => $c->products->count()) }}</p>
+    </div>
+</div>
+
+{{-- Search + button --}}
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="relative w-full sm:max-w-sm">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search-categories" oninput="filterCategories()" placeholder="Rechercher une catégorie…" class="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm shadow-sm outline-none focus:border-accent">
+    </div>
+    <button type="button" onclick="toggleForm()" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Nouvelle catégorie
     </button>
+</div>
+
+{{-- Formulaire création / édition (AVANT la liste) --}}
+<div id="category-form" class="hidden mb-6 rounded-2xl border border-border bg-card shadow-card p-5">
+    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouvelle catégorie</h2>
+    <form id="category-form-tag" action="/admin/categories" method="POST" enctype="multipart/form-data" class="space-y-3">
+        @csrf
+        <input type="hidden" name="_method" id="method-override" value="">
+        <input type="hidden" name="existing_image" id="f-existing_image" value="">
+
+        <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
+                <input type="text" name="name" id="f-name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slug</span>
+                <input type="text" name="slug" id="f-slug" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+        </div>
+
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</span>
+            <textarea name="description" id="f-description" rows="3" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
+        </label>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ordre d'affichage *</span>
+                <input type="number" name="sort_order" id="f-sort_order" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <div class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image (JPEG/PNG)</span>
+                <input type="file" name="image" id="f-image" accept="image/jpeg,image/png" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                <div id="f-image-preview" class="mt-3 flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
+            <button type="button" onclick="document.getElementById('category-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
+            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
+        </div>
+    </form>
 </div>
 
 @if($categories->isEmpty())
@@ -29,7 +88,7 @@
         </div>
         <ul class="divide-y divide-border">
             @foreach($categories as $cat)
-            <li class="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[1fr_120px_80px_100px] md:items-center">
+            <li class="category-row grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[1fr_120px_80px_100px] md:items-center">
                 <div class="flex items-center gap-3 min-w-0">
                     @if($cat->image_url)
                         <img src="{{ $cat->image_url }}" alt="" class="h-12 w-12 flex-shrink-0 rounded-lg object-cover">
@@ -92,49 +151,6 @@
         </ul>
     </div>
 @endif
-
-{{-- Formulaire création / édition --}}
-<div id="category-form" class="hidden mt-6 rounded-2xl border border-border bg-card shadow-card p-5">
-    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouvelle catégorie</h2>
-    <form id="category-form-tag" action="/admin/categories" method="POST" enctype="multipart/form-data" class="space-y-3">
-        @csrf
-        <input type="hidden" name="_method" id="method-override" value="">
-        <input type="hidden" name="existing_image" id="f-existing_image" value="">
-
-        <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
-                <input type="text" name="name" id="f-name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slug</span>
-                <input type="text" name="slug" id="f-slug" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</span>
-            <textarea name="description" id="f-description" rows="3" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ordre d'affichage *</span>
-                <input type="number" name="sort_order" id="f-sort_order" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <div class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image (JPEG/PNG)</span>
-                <input type="file" name="image" id="f-image" accept="image/jpeg,image/png" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-                <div id="f-image-preview" class="mt-3 flex flex-wrap gap-2"></div>
-            </div>
-        </div>
-
-        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
-            <button type="button" onclick="document.getElementById('category-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
-            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
-        </div>
-    </form>
-</div>
 
 {{-- Modal détail catégorie --}}
 <div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 pt-20" onclick="if(event.target===this) closeDetail()">
@@ -221,6 +237,34 @@ function showDetail(data) {
 
 function closeDetail() {
     document.getElementById('detail-modal').classList.add('hidden');
+}
+
+function toggleForm() {
+    const form = document.getElementById('category-form');
+    const isHidden = form.classList.contains('hidden');
+    if (isHidden) {
+        form.classList.remove('hidden');
+        document.getElementById('form-title').textContent = 'Nouvelle catégorie';
+        document.getElementById('category-form-tag').action = '/admin/categories';
+        document.getElementById('method-override').value = '';
+        document.getElementById('f-image-preview').innerHTML = '';
+        document.getElementById('f-existing_image').value = '';
+        document.getElementById('f-name').value = '';
+        document.getElementById('f-slug').value = '';
+        document.getElementById('f-description').value = '';
+        document.getElementById('f-sort_order').value = '';
+    } else {
+        form.classList.add('hidden');
+    }
+}
+
+function filterCategories() {
+    const q = document.getElementById('search-categories').value.toLowerCase();
+    const items = document.querySelectorAll('.category-row');
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? '' : 'none';
+    });
 }
 
 function fillForm(data) {

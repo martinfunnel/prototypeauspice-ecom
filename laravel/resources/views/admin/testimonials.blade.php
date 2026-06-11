@@ -7,7 +7,28 @@
     <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
 @endif
 
-<div class="mb-4 flex justify-end">
+{{-- Stats cards --}}
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Témoignages</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $testimonials->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Visibles</p>
+        <p class="mt-1 font-display text-2xl font-bold text-success">{{ $testimonials->where('is_active', true)->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Masqués</p>
+        <p class="mt-1 font-display text-2xl font-bold text-muted-foreground">{{ $testimonials->where('is_active', false)->count() }}</p>
+    </div>
+</div>
+
+{{-- Search + button --}}
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="relative w-full sm:max-w-sm">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="search-testimonials" oninput="filterTestimonials()" placeholder="Rechercher un témoignage…" class="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm shadow-sm outline-none focus:border-accent">
+    </div>
     @canDo('create_testimonials')
     <button type="button" onclick="openForm()" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
@@ -23,7 +44,7 @@
 @else
     <div class="grid gap-3">
         @foreach($testimonials as $t)
-        <div class="flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-card">
+        <div class="testimonial-row flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-card">
             @if($t->media_url)
                 @if($t->media_type === 'video')
                     <video src="{{ $t->media_url }}" class="h-20 w-20 shrink-0 rounded-lg object-cover" muted></video>
@@ -248,5 +269,14 @@ function removeMedia() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeForm();
 });
+
+function filterTestimonials() {
+    const q = document.getElementById('search-testimonials').value.toLowerCase();
+    const items = document.querySelectorAll('.testimonial-row');
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? '' : 'none';
+    });
+}
 </script>
 @endsection

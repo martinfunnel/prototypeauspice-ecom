@@ -12,7 +12,33 @@ $statusBadge = [
     'delivered' => 'bg-success/15 text-success border-success/30',
     'cancelled' => 'bg-destructive/15 text-destructive border-destructive/30',
 ];
+$totalRevenue = $orders->sum('total');
+$pendingRevenue = $orders->where('status', 'pending')->sum('total');
 @endphp
+
+{{-- Stats cards --}}
+<div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Commandes</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ $orders->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">En attente</p>
+        <p class="mt-1 font-display text-2xl font-bold text-warning">{{ $orders->where('status', 'pending')->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Livrées</p>
+        <p class="mt-1 font-display text-2xl font-bold text-success">{{ $orders->where('status', 'delivered')->count() }}</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">CA total</p>
+        <p class="mt-1 font-display text-2xl font-bold text-accent">{{ number_format($totalRevenue, 0, ',', ' ') }} FCFA</p>
+    </div>
+    <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">En attente (CA)</p>
+        <p class="mt-1 font-display text-2xl font-bold">{{ number_format($pendingRevenue, 0, ',', ' ') }} FCFA</p>
+    </div>
+</div>
 
 @if(session('success'))
     <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
