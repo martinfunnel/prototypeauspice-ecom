@@ -158,7 +158,7 @@ class AdminController extends Controller
 
     public function categories(Request $request)
     {
-        $categories = Category::orderBy('sort_order')->get();
+        $categories = Category::with('products')->orderBy('sort_order')->get();
         $editing = $request->has('edit') ? Category::find($request->edit) : null;
         return view('admin.categories', compact('categories', 'editing'));
     }
