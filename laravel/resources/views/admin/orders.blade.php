@@ -71,8 +71,8 @@ $pendingRevenue = $orders->where('status', 'pending')->sum('total');
                 $waPhone = preg_replace('/[^0-9]/', '', $o->customer_phone);
                 $waMsg = urlencode("Bonjour {$o->customer_name}, concernant votre commande {$o->order_number}…");
             @endphp
-            <details class="group rounded-2xl border border-border bg-card shadow-card">
-                <summary class="flex cursor-pointer items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
+            <details id="order-{{ $o->id }}" class="group rounded-2xl border border-border bg-card shadow-card">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="font-mono text-sm font-bold text-primary">{{ $o->order_number }}</span>
@@ -86,9 +86,14 @@ $pendingRevenue = $orders->where('status', 'pending')->sum('total');
                             <span class="text-muted-foreground"> · {{ $o->customer_phone }} · {{ $o->commune_name }}</span>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <div class="font-display text-base font-bold">{{ number_format($o->total, 0, ',', ' ') }} FCFA</div>
-                        <div class="text-[10px] uppercase text-muted-foreground">{{ $o->items->count() }} article(s)</div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <div class="font-display text-base font-bold">{{ number_format($o->total, 0, ',', ' ') }} FCFA</div>
+                            <div class="text-[10px] uppercase text-muted-foreground">{{ $o->items->count() }} article(s)</div>
+                        </div>
+                        <button type="button" onclick="event.preventDefault(); const d=document.getElementById('order-{{ $o->id }}'); d.open=!d.open;" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
                     </div>
                 </summary>
 
