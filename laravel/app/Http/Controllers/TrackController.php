@@ -15,12 +15,10 @@ class TrackController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'phone' => 'required|string|max:20',
+            'order_number' => 'required|string|max:50',
         ]);
 
-        session(['last_phone' => $request->phone]);
-
-        $orders = Order::where('customer_phone', $request->phone)
+        $orders = Order::where('order_number', $request->order_number)
             ->with('items')
             ->orderByDesc('created_at')
             ->get();

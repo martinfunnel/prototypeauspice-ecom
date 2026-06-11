@@ -4,12 +4,12 @@
 
 @section('content')
 <section class="mx-auto max-w-3xl px-4 py-10">
-    <h1 class="font-display text-3xl font-bold">Suivre mes commandes</h1>
-    <p class="mt-1 text-sm text-muted-foreground">Entrez le numéro de téléphone utilisé lors de la commande.</p>
+    <h1 class="font-display text-3xl font-bold">Suivre ma commande</h1>
+    <p class="mt-1 text-sm text-muted-foreground">Entrez le numéro de commande reçu (ex : CMD-260611-01006).</p>
 
     <form action="/suivi" method="POST" class="mt-6 flex gap-2">
         @csrf
-        <input type="tel" name="phone" required value="{{ old('phone', session('last_phone')) }}" placeholder="+225 07 00 00 00 00" class="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
+        <input type="text" name="order_number" required value="{{ old('order_number') }}" placeholder="CMD-260611-01006" class="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-accent">
         <button type="submit" class="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition hover:scale-[1.02]">Rechercher</button>
     </form>
 
@@ -55,7 +55,7 @@
             </ul>
         @else
             <div class="mt-8 rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-                Aucune commande trouvée pour ce numéro.
+                Aucune commande trouvée pour ce numéro de commande.
             </div>
         @endif
     @endif
