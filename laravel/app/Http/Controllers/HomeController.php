@@ -13,10 +13,10 @@ class HomeController extends Controller
     public function index()
     {
         $categories = Category::orderBy('sort_order')->get();
-        $popularProducts = Product::active()->popular()->limit(8)->get();
+        $products = Product::active()->orderBy('is_popular', 'desc')->limit(8)->get();
+        $featured = Product::active()->where('slug', 'cacaocelyan')->first();
         $testimonials = Testimonial::active()->limit(6)->get();
-        $banner = PromoBanner::active()->where('key', 'catalogue')->first();
 
-        return view('home', compact('categories', 'popularProducts', 'testimonials', 'banner'));
+        return view('home', compact('categories', 'products', 'featured', 'testimonials'));
     }
 }

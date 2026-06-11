@@ -1,44 +1,38 @@
-<header class="bg-emerald-900 text-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-            {{-- Logo --}}
-            <a href="/" class="text-xl font-bold tracking-tight">
-                Auspice Market
-            </a>
-
-            {{-- Navigation --}}
-            <nav class="hidden md:flex space-x-8">
-                <a href="/" class="hover:text-emerald-200 transition">Accueil</a>
-                <a href="/catalogue" class="hover:text-emerald-200 transition">Catalogue</a>
-                <a href="/suivi" class="hover:text-emerald-200 transition">Suivi</a>
-            </nav>
-
-            <div class="flex items-center gap-4">
-                {{-- Admin link --}}
-                @auth
-                    @if(auth()->user()->hasAnyRole(['admin', 'super_admin']))
-                        <a href="/admin" class="hidden md:block text-sm hover:text-emerald-200 transition">Admin</a>
-                    @endif
-                    <form action="/logout" method="POST" class="hidden md:block">
-                        @csrf
-                        <button type="submit" class="text-sm hover:text-emerald-200 transition">Déconnexion</button>
-                    </form>
-                @else
-                    <a href="/login" class="hidden md:block text-sm hover:text-emerald-200 transition">Connexion</a>
-                @endauth
-
-                {{-- Panier --}}
-                <a href="/panier" class="relative p-2 hover:text-emerald-200 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    @if(session('cart_count', 0) > 0)
-                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {{ session('cart_count') }}
-                        </span>
-                    @endif
-                </a>
+<header class="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div class="max-w-7xl mx-auto flex h-16 items-center justify-between gap-4 px-4">
+        {{-- Logo --}}
+        <a href="/" class="flex items-center gap-2">
+            @include('components.logo', ['size' => 'md'])
+            <div class="flex flex-col leading-tight">
+                <span class="font-display text-base font-bold text-foreground">Auspice Market</span>
+                <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Santé & bien-être bio</span>
             </div>
+        </a>
+
+        {{-- Navigation --}}
+        <nav class="hidden items-center gap-1 md:flex">
+            <a href="/" class="rounded-md px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Accueil</a>
+            <a href="/catalogue" class="rounded-md px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Boutique</a>
+            <a href="/suivi" class="rounded-md px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Mes commandes</a>
+        </nav>
+
+        {{-- Actions --}}
+        <div class="flex items-center gap-2">
+            <a href="/catalogue" class="hidden h-10 w-10 place-items-center rounded-md text-foreground/70 transition hover:bg-muted hover:text-foreground sm:grid" aria-label="Rechercher">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </a>
+            <a href="/panier" class="relative grid h-10 w-10 place-items-center rounded-md text-foreground/80 transition hover:bg-muted" aria-label="Panier">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                @if(session('cart_count', 0) > 0)
+                    <span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-foreground">
+                        {{ session('cart_count') }}
+                    </span>
+                @endif
+            </a>
+            <a href="/login" class="hidden h-10 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground/80 transition hover:border-accent hover:text-accent sm:inline-flex" aria-label="Espace administrateur" title="Espace administrateur">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                Admin
+            </a>
         </div>
     </div>
 </header>

@@ -21,6 +21,7 @@ Route::post('/panier/maj', [CartController::class, 'update'])->name('cart.update
 
 Route::get('/commande', [OrderController::class, 'create'])->name('order.create');
 Route::post('/commande', [OrderController::class, 'store'])->name('order.store');
+Route::post('/commande-directe', [OrderController::class, 'storeDirect'])->name('order.direct');
 
 Route::get('/suivi', [TrackController::class, 'index'])->name('track');
 Route::post('/suivi', [TrackController::class, 'search'])->name('track.search');

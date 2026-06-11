@@ -1,28 +1,27 @@
-<a href="/produit/{{ $product->slug }}" class="block bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden group">
-    <div class="aspect-square bg-gray-100 relative overflow-hidden">
+<a href="/produit/{{ $product->slug }}" class="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-elevated">
+    <div class="relative aspect-square overflow-hidden bg-muted">
         @if(!empty($product->images[0]))
-            <img src="{{ $product->images[0] }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            <img src="{{ $product->images[0] }}" alt="{{ $product->name }}" loading="lazy" class="h-full w-full object-cover transition group-hover:scale-105">
         @else
-            <div class="w-full h-full flex items-center justify-center text-gray-400">
-                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            </div>
+            <div class="grid h-full w-full place-items-center text-muted-foreground">📦</div>
         @endif
         @if($product->hasPromo())
-            <span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">PROMO</span>
+            <span class="absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-foreground shadow-accent">Promo</span>
+        @endif
+        @if($product->is_popular)
+            <span class="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground">★ Populaire</span>
         @endif
     </div>
-    <div class="p-4">
-        <h3 class="font-semibold text-gray-900 mb-1 truncate">{{ $product->name }}</h3>
-        <p class="text-sm text-gray-500 mb-2 line-clamp-2">{{ $product->short_description }}</p>
-        <div class="flex items-center justify-between">
-            <div>
-                @if($product->hasPromo())
-                    <span class="text-lg font-bold text-emerald-700">{{ number_format($product->displayPrice(), 0, ',', ' ') }} FCFA</span>
-                    <span class="text-sm text-gray-400 line-through ml-2">{{ number_format($product->price, 0, ',', ' ') }} FCFA</span>
-                @else
-                    <span class="text-lg font-bold text-gray-900">{{ number_format($product->price, 0, ',', ' ') }} FCFA</span>
-                @endif
-            </div>
+    <div class="flex flex-1 flex-col gap-2 p-4">
+        <h3 class="line-clamp-2 font-display text-base font-semibold leading-tight text-foreground">{{ $product->name }}</h3>
+        @if($product->short_description)
+            <p class="line-clamp-2 text-xs text-muted-foreground">{{ $product->short_description }}</p>
+        @endif
+        <div class="mt-auto flex items-baseline gap-2 pt-2">
+            <span class="font-display text-lg font-bold text-primary">{{ number_format($product->displayPrice(), 0, ',', ' ') }} FCFA</span>
+            @if($product->hasPromo())
+                <span class="text-xs text-muted-foreground line-through">{{ number_format($product->price, 0, ',', ' ') }} FCFA</span>
+            @endif
         </div>
     </div>
 </a>

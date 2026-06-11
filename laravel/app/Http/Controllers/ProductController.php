@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Commune;
 use App\Models\Product;
 
 class ProductController extends Controller
@@ -14,7 +15,8 @@ class ProductController extends Controller
             ->where('id', '!=', $product->id)
             ->limit(4)
             ->get();
+        $communes = Commune::active()->orderBy('zone')->orderBy('name')->get();
 
-        return view('product', compact('product', 'related'));
+        return view('product', compact('product', 'related', 'communes'));
     }
 }

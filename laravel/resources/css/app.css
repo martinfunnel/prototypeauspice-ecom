@@ -2,8 +2,70 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../../resources/views/**/*.blade.php';
+@source '../../app/Livewire/**/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: "DM Sans", system-ui, sans-serif;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --radius-sm: calc(0.75rem - 4px);
+    --radius-md: calc(0.75rem - 2px);
+    --radius-lg: 0.75rem;
+    --radius-xl: calc(0.75rem + 4px);
+    --radius-2xl: calc(0.75rem + 8px);
+
+    --color-background: #f9fbfa;
+    --color-foreground: #1a2e2b;
+    --color-card: #ffffff;
+    --color-card-foreground: #1a2e2b;
+    --color-popover: #ffffff;
+    --color-popover-foreground: #1a2e2b;
+    --color-primary: #3b6ea5;
+    --color-primary-foreground: #f9fbfa;
+    --color-secondary: #e8f5e9;
+    --color-secondary-foreground: #2e5c3a;
+    --color-muted: #f0f4f3;
+    --color-muted-foreground: #6b8a82;
+    --color-accent: #4caf7a;
+    --color-accent-foreground: #ffffff;
+    --color-destructive: #c94a4a;
+    --color-destructive-foreground: #ffffff;
+    --color-success: #4caf7a;
+    --color-success-foreground: #ffffff;
+    --color-warning: #d4a843;
+    --color-warning-foreground: #1a2e2b;
+    --color-border: #e2eae7;
+    --color-input: #e2eae7;
+    --color-ring: #4caf7a;
+    --color-teal: #4a9e9e;
+}
+
+:root {
+    --gradient-hero: linear-gradient(135deg, #3b6ea5, #2c5a8a);
+    --gradient-accent: linear-gradient(135deg, #5cc78a, #4caf7a);
+    --gradient-soft: linear-gradient(180deg, #f9fbfa, #e8f5e9);
+    --shadow-card: 0 1px 3px rgba(59, 110, 165, 0.08), 0 4px 16px rgba(59, 110, 165, 0.06);
+    --shadow-elevated: 0 10px 40px -10px rgba(59, 110, 165, 0.25);
+    --shadow-accent: 0 8px 24px -8px rgba(76, 175, 122, 0.4);
+}
+
+@layer base {
+    * { border-color: var(--color-border); }
+    html { font-family: var(--font-sans); }
+    body {
+        background-color: var(--color-background);
+        color: var(--color-foreground);
+        -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, h5 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@layer utilities {
+    .gradient-hero { background-image: var(--gradient-hero); }
+    .gradient-accent { background-image: var(--gradient-accent); }
+    .gradient-soft { background-image: var(--gradient-soft); }
+    .shadow-card { box-shadow: var(--shadow-card); }
+    .shadow-elevated { box-shadow: var(--shadow-elevated); }
+    .shadow-accent { box-shadow: var(--shadow-accent); }
+    .text-balance { text-wrap: balance; }
 }

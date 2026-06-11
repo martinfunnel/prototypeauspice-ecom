@@ -69,4 +69,45 @@ class OrderController extends Controller
         return redirect()->route('track')
             ->with('success', 'Commande passée avec succès ! Numéro : ' . $order->order_number);
     }
+
+    public function storeDirect(Request $request)
+    {
+        $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'required|string|max:20',
+            'commune_id' => 'required|exists:communes,id',
+            'address' => 'required|string|max:500',
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+        $commune = Commune::findOrFail($request->commune_id);
+        $subtotal = $product->displayPrice() * $request->quantity;
+
+        $order = Order::create([
+            'order_number' => 'CMD-' . now()->format('ymd') . '-' . strtoupper(Str::random(5)),
+            'customer_name' => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'commune_id' => $commune->id,
+            'commune_name' => $commune->name,
+            'address' => $request->address,
+            'subtotal' => $subtotal,
+            'delivery_fee' => $commune->delivery_fee,
+            'total' => $subtotal + $commune->delivery_fee,
+            'status' => 'pending',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'unit_price' => $product->displayPrice(),
+            'quantity' => $request->quantity,
+            'subtotal' => $subtotal,
+        ]);
+
+        return redirect()->route('track')
+            ->with('success', 'Commande envoyée ! Numéro : ' . $order->order_number);
+    }
 }
