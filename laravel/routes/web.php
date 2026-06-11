@@ -54,6 +54,9 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
     Route::middleware('can:create_products')->post('/products', [AdminController::class, 'storeProduct']);
     Route::middleware('can:edit_products')->patch('/products/{id}', [AdminController::class, 'updateProduct']);
     Route::middleware('can:delete_products')->delete('/products/{id}', [AdminController::class, 'destroyProduct']);
+    Route::middleware('can:edit_products')->post('/products/{id}/toggle', [AdminController::class, 'toggleProduct'])->name('admin.products.toggle');
+    Route::middleware('can:edit_products')->post('/products/{id}/stock', [AdminController::class, 'adjustStock'])->name('admin.products.stock');
+    Route::middleware('can:edit_products')->post('/products/{id}/promo', [AdminController::class, 'setPromo'])->name('admin.products.promo');
 
     // Categories
     Route::middleware('can:view_categories')->get('/categories', [AdminController::class, 'categories'])->name('admin.categories');

@@ -161,6 +161,40 @@ class AdminController extends Controller
         return redirect('/admin/products')->with('success', 'Produit supprimé');
     }
 
+    public function toggleProduct(string $id)
+    {
+        $product = Product::findOrFail($id);
+        $product->update(['is_active' => !$product->is_active]);
+        return redirect('/admin/products')->with('success', $product->is_active ? 'Produit activé' : 'Produit désactivé');
+    }
+
+    public function adjustStock(Request $request, string $id)
+    {
+        $product = Product::findOrFail($id);
+        $validated = $request->validate([
+            'amount' => 'required|integer',
+            'reason' => 'nullable|string|max:200',
+        ]);
+        $newStock = max(0, $product->stock + $validated['amount']);
+        $product->update(['stock' => $newStock]);
+        $this->logActivity('stock_adjust', "Stock ajusté: {$product->name} ({$validated['amount']}) -> {$newStock}", Product::class, $product->id);
+        return redirect('/admin/products')->with('success', 'Stock mis à jour');
+    }
+
+    public function setPromo(Request $request, string $id)
+    {
+        $product = Product::findOrFail($id);
+        $validated = $request->validate([
+            'promo_price' => 'nullable|numeric|min:0',
+            'promo_ends_at' => 'nullable|date',
+        ]);
+        $product->update([
+            'promo_price' => $validated['promo_price'] ?: null,
+            'promo_ends_at' => $validated['promo_ends_at'] ?: null,
+        ]);
+        return redirect('/admin/products')->with('success', 'Promotion mise à jour');
+    }
+
     public function categories(Request $request)
     {
         $categories = Category::with('products')->orderBy('sort_order')->get();

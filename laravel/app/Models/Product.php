@@ -12,13 +12,14 @@ class Product extends Model
     use HasUuids;
     protected $fillable = [
         'name', 'slug', 'description', 'short_description',
-        'price', 'promo_price', 'images', 'detail_images', 'benefits',
+        'price', 'promo_price', 'promo_ends_at', 'images', 'detail_images', 'benefits',
         'stock', 'category_id', 'is_active', 'is_popular'
     ];
 
     protected $casts = [
         'price' => 'decimal:0',
         'promo_price' => 'decimal:0',
+        'promo_ends_at' => 'datetime',
         'images' => 'array',
         'detail_images' => 'array',
         'benefits' => 'array',
