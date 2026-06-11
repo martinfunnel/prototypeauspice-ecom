@@ -3,17 +3,17 @@
 @section('title', 'Admin — Commandes')
 
 @section('content')
-<section class="py-8 bg-gray-100 min-h-screen">
+<section class="py-8 bg-background min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Commandes</h1>
+        <h1 class="font-display text-3xl font-bold text-foreground mb-8">Commandes</h1>
 
         @if(session('success'))
-            <div class="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg mb-6">{{ session('success') }}</div>
+            <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
         @endif
 
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-card rounded-xl shadow-card overflow-hidden">
             <table class="w-full text-sm">
-                <thead class="bg-gray-50">
+                <thead class="bg-muted">
                     <tr>
                         <th class="text-left p-3">N°</th>
                         <th class="text-left p-3">Client</th>
@@ -27,7 +27,7 @@
                 </thead>
                 <tbody>
                     @foreach($orders as $order)
-                        <tr class="border-b hover:bg-gray-50">
+                        <tr class="border-b hover:bg-muted">
                             <td class="p-3 font-medium">{{ $order->order_number }}</td>
                             <td class="p-3">{{ $order->customer_name }}</td>
                             <td class="p-3">{{ $order->customer_phone }}</td>
@@ -42,11 +42,11 @@
                                     {{ $order->statusLabel() }}
                                 </span>
                             </td>
-                            <td class="p-3 text-gray-500">{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="p-3 text-muted-foreground">{{ $order->created_at->format('d/m/Y H:i') }}</td>
                             <td class="p-3">
                                 <form action="/admin/orders/{{ $order->id }}/status" method="POST" class="flex gap-2">
                                     @csrf @method('PATCH')
-                                    <select name="status" class="text-xs border rounded px-2 py-1">
+                                    <select name="status" class="text-xs border border-border rounded px-2 py-1 bg-background">
                                         <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>En attente</option>
                                         <option value="confirmed" {{ $order->status == 'confirmed' ? 'selected' : '' }}>Confirmée</option>
                                         <option value="processing" {{ $order->status == 'processing' ? 'selected' : '' }}>Préparation</option>
@@ -54,7 +54,7 @@
                                         <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Livrée</option>
                                         <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Annulée</option>
                                     </select>
-                                    <button type="submit" class="text-xs bg-emerald-900 text-white px-2 py-1 rounded">OK</button>
+                                    <button type="submit" class="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">OK</button>
                                 </form>
                             </td>
                         </tr>

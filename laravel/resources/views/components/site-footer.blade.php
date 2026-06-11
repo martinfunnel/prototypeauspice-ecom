@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto grid gap-10 px-4 py-12 md:grid-cols-4">
         <div>
             <div class="flex items-center gap-2">
-                @include('components.logo', ['size' => 'md'])
+                @include('components.logo', ['size' => 'md', 'variant' => 'card'])
                 <span class="font-display text-lg font-bold">Auspice Market</span>
             </div>
             <p class="mt-3 text-sm text-primary-foreground/70">
