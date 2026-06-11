@@ -24,10 +24,12 @@
                             <td class="p-3 text-right">{{ $t->rating }}/5</td>
                             <td class="p-3 text-center">{{ $t->is_active ? 'Oui' : 'Non' }}</td>
                             <td class="p-3">
+                                @canDo('delete_testimonials')
                                 <form action="/admin/testimonials/{{ $t->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-destructive hover:opacity-70 text-xs">Supprimer</button>
                                 </form>
+                                @endcanDo
                             </td>
                         </tr>
                     @endforeach

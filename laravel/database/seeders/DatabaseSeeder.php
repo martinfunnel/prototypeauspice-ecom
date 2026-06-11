@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             CommuneSeeder::class,
             PromoBannerSeeder::class,
+            PermissionSeeder::class,
         ]);
     }
 }

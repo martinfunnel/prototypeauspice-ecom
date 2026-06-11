@@ -23,10 +23,12 @@
                             <td class="p-3">{{ $cat->slug }}</td>
                             <td class="p-3 text-right">{{ $cat->sort_order }}</td>
                             <td class="p-3">
+                                @canDo('delete_categories')
                                 <form action="/admin/categories/{{ $cat->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-destructive hover:opacity-70 text-xs">Supprimer</button>
                                 </form>
+                                @endcanDo
                             </td>
                         </tr>
                     @endforeach

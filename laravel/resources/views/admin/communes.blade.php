@@ -25,10 +25,12 @@
                             <td class="p-3 text-right">{{ $commune->delivery_days }} j</td>
                             <td class="p-3 text-center">{{ $commune->is_active ? 'Oui' : 'Non' }}</td>
                             <td class="p-3">
+                                @canDo('delete_communes')
                                 <form action="/admin/communes/{{ $commune->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-destructive hover:opacity-70 text-xs">Supprimer</button>
                                 </form>
+                                @endcanDo
                             </td>
                         </tr>
                     @endforeach

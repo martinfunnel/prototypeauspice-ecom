@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Commune;
 use App\Models\Order;
+use App\Models\Permission;
 use App\Models\Product;
 use App\Models\PromoBanner;
+use App\Models\Role;
 use App\Models\Testimonial;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -166,5 +169,146 @@ class AdminController extends Controller
     {
         PromoBanner::findOrFail($id)->update($request->all());
         return redirect('/admin/banners')->with('success', 'Bannière mise à jour');
+    }
+
+    public function destroyOrder(string $id)
+    {
+        Order::findOrFail($id)->delete();
+        return redirect('/admin/orders')->with('success', 'Commande supprimée');
+    }
+
+    // ==================== USERS (Super Admin only) ====================
+    public function users()
+    {
+        $users = User::with('roles')->orderBy('name')->paginate(20);
+        $roles = Role::orderBy('name')->get();
+        return view('admin.users', compact('users', 'roles'));
+    }
+
+    public function storeUser(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:6',
+            'role_ids' => 'nullable|array',
+            'role_ids.*' => 'exists:roles,id',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        if (!empty($validated['role_ids'])) {
+            $user->roles()->sync($validated['role_ids']);
+        }
+
+        return redirect('/admin/users')->with('success', 'Utilisateur créé');
+    }
+
+    public function editUser(string $id)
+    {
+        $user = User::with('roles')->findOrFail($id);
+        $roles = Role::orderBy('name')->get();
+        return view('admin.users', compact('user', 'roles'));
+    }
+
+    public function updateUser(Request $request, string $id)
+    {
+        $user = User::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:6',
+            'role_ids' => 'nullable|array',
+            'role_ids.*' => 'exists:roles,id',
+        ]);
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        if (!empty($validated['password'])) {
+            $user->update(['password' => Hash::make($validated['password'])]);
+        }
+
+        $user->roles()->sync($validated['role_ids'] ?? []);
+
+        return redirect('/admin/users')->with('success', 'Utilisateur mis à jour');
+    }
+
+    public function destroyUser(string $id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->isSuperAdmin() && User::whereHas('roles', fn ($q) => $q->where('key', 'super_admin'))->count() <= 1) {
+            return redirect('/admin/users')->with('error', 'Impossible de supprimer le dernier super admin');
+        }
+        $user->delete();
+        return redirect('/admin/users')->with('success', 'Utilisateur supprimé');
+    }
+
+    // ==================== ROLES (Super Admin only) ====================
+    public function roles()
+    {
+        $roles = Role::with('permissions')->orderBy('name')->get();
+        $permissions = Permission::orderBy('group')->orderBy('name')->get()->groupBy('group');
+        return view('admin.roles', compact('roles', 'permissions'));
+    }
+
+    public function storeRole(Request $request)
+    {
+        $validated = $request->validate([
+            'key' => 'required|string|unique:roles|max:50',
+            'name' => 'required|string|max:255',
+            'permission_ids' => 'nullable|array',
+            'permission_ids.*' => 'exists:permissions,id',
+        ]);
+
+        $role = Role::create([
+            'key' => $validated['key'],
+            'name' => $validated['name'],
+        ]);
+
+        if (!empty($validated['permission_ids'])) {
+            $role->permissions()->sync($validated['permission_ids']);
+        }
+
+        return redirect('/admin/roles')->with('success', 'Rôle créé');
+    }
+
+    public function editRole(string $id)
+    {
+        $role = Role::with('permissions')->findOrFail($id);
+        $permissions = Permission::orderBy('group')->orderBy('name')->get()->groupBy('group');
+        $roles = Role::with('permissions')->orderBy('name')->get();
+        return view('admin.roles', compact('role', 'permissions', 'roles'));
+    }
+
+    public function updateRole(Request $request, string $id)
+    {
+        $role = Role::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'permission_ids' => 'nullable|array',
+            'permission_ids.*' => 'exists:permissions,id',
+        ]);
+
+        $role->update(['name' => $validated['name']]);
+        $role->permissions()->sync($validated['permission_ids'] ?? []);
+
+        return redirect('/admin/roles')->with('success', 'Rôle mis à jour');
+    }
+
+    public function destroyRole(string $id)
+    {
+        $role = Role::findOrFail($id);
+        if ($role->key === 'super_admin') {
+            return redirect('/admin/roles')->with('error', 'Impossible de supprimer le rôle super admin');
+        }
+        $role->delete();
+        return redirect('/admin/roles')->with('success', 'Rôle supprimé');
     }
 }

@@ -34,10 +34,12 @@
                             <td class="p-3 text-right text-foreground">{{ $product->stock }}</td>
                             <td class="p-3 text-center text-foreground">{{ $product->is_active ? 'Oui' : 'Non' }}</td>
                             <td class="p-3">
+                                @canDo('delete_products')
                                 <form action="/admin/products/{{ $product->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ce produit ?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-destructive hover:opacity-70 text-xs transition">Supprimer</button>
                                 </form>
+                                @endcanDo
                             </td>
                         </tr>
                     @endforeach

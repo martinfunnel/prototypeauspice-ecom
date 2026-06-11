@@ -33,23 +33,52 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Admin
+// Admin — protégé par permissions granulaires
 Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
-    Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/products', [AdminController::class, 'products'])->name('admin.products');
-    Route::post('/products', [AdminController::class, 'storeProduct']);
-    Route::delete('/products/{id}', [AdminController::class, 'destroyProduct']);
-    Route::get('/categories', [AdminController::class, 'categories'])->name('admin.categories');
-    Route::post('/categories', [AdminController::class, 'storeCategory']);
-    Route::delete('/categories/{id}', [AdminController::class, 'destroyCategory']);
-    Route::get('/communes', [AdminController::class, 'communes'])->name('admin.communes');
-    Route::post('/communes', [AdminController::class, 'storeCommune']);
-    Route::delete('/communes/{id}', [AdminController::class, 'destroyCommune']);
-    Route::get('/orders', [AdminController::class, 'orders'])->name('admin.orders');
-    Route::patch('/orders/{id}/status', [AdminController::class, 'updateOrderStatus']);
-    Route::get('/testimonials', [AdminController::class, 'testimonials'])->name('admin.testimonials');
-    Route::post('/testimonials', [AdminController::class, 'storeTestimonial']);
-    Route::delete('/testimonials/{id}', [AdminController::class, 'destroyTestimonial']);
-    Route::get('/banners', [AdminController::class, 'banners'])->name('admin.banners');
-    Route::patch('/banners/{id}', [AdminController::class, 'updateBanner']);
+
+    Route::middleware('can:view_dashboard')->get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+    // Products
+    Route::middleware('can:view_products')->get('/products', [AdminController::class, 'products'])->name('admin.products');
+    Route::middleware('can:create_products')->post('/products', [AdminController::class, 'storeProduct']);
+    Route::middleware('can:delete_products')->delete('/products/{id}', [AdminController::class, 'destroyProduct']);
+
+    // Categories
+    Route::middleware('can:view_categories')->get('/categories', [AdminController::class, 'categories'])->name('admin.categories');
+    Route::middleware('can:create_categories')->post('/categories', [AdminController::class, 'storeCategory']);
+    Route::middleware('can:delete_categories')->delete('/categories/{id}', [AdminController::class, 'destroyCategory']);
+
+    // Communes
+    Route::middleware('can:view_communes')->get('/communes', [AdminController::class, 'communes'])->name('admin.communes');
+    Route::middleware('can:create_communes')->post('/communes', [AdminController::class, 'storeCommune']);
+    Route::middleware('can:delete_communes')->delete('/communes/{id}', [AdminController::class, 'destroyCommune']);
+
+    // Orders
+    Route::middleware('can:view_orders')->get('/orders', [AdminController::class, 'orders'])->name('admin.orders');
+    Route::middleware('can:update_orders')->patch('/orders/{id}/status', [AdminController::class, 'updateOrderStatus']);
+    Route::middleware('can:delete_orders')->delete('/orders/{id}', [AdminController::class, 'destroyOrder']);
+
+    // Testimonials
+    Route::middleware('can:view_testimonials')->get('/testimonials', [AdminController::class, 'testimonials'])->name('admin.testimonials');
+    Route::middleware('can:create_testimonials')->post('/testimonials', [AdminController::class, 'storeTestimonial']);
+    Route::middleware('can:delete_testimonials')->delete('/testimonials/{id}', [AdminController::class, 'destroyTestimonial']);
+
+    // Banners
+    Route::middleware('can:view_banners')->get('/banners', [AdminController::class, 'banners'])->name('admin.banners');
+    Route::middleware('can:edit_banners')->patch('/banners/{id}', [AdminController::class, 'updateBanner']);
+
+    // Users & Roles — Super Admin only
+    Route::middleware('super_admin')->group(function () {
+        Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+        Route::post('/users', [AdminController::class, 'storeUser']);
+        Route::get('/users/{id}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
+        Route::patch('/users/{id}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
+
+        Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
+        Route::post('/roles', [AdminController::class, 'storeRole']);
+        Route::get('/roles/{id}/edit', [AdminController::class, 'editRole'])->name('admin.roles.edit');
+        Route::patch('/roles/{id}', [AdminController::class, 'updateRole']);
+        Route::delete('/roles/{id}', [AdminController::class, 'destroyRole']);
+    });
 });

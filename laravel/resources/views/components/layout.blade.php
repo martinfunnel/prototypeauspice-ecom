@@ -14,6 +14,9 @@
     {{-- Header --}}
     @include('components.site-header')
 
+    {{-- Admin nav --}}
+    @include('components.admin-nav')
+
     {{-- Contenu principal --}}
     <main class="flex-grow">
         @yield('content')

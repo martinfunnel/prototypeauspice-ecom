@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +49,8 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole('admin');
+        $adminRole = Role::firstOrCreate(['key' => 'admin'], ['name' => 'Administrateur']);
+        $user->roles()->attach($adminRole->id);
         Auth::login($user);
 
         return redirect('/admin');

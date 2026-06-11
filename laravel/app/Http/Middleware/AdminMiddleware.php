@@ -15,7 +15,11 @@ class AdminMiddleware
         }
 
         $user = auth()->user();
-        if (!$user->hasAnyRole(['admin', 'super_admin'])) {
+        // Un admin doit avoir au moins un rôle et au moins une permission
+        $hasRole = $user->roles()->exists();
+        $hasPermission = $user->roles()->whereHas('permissions')->exists();
+
+        if (!$hasRole || !$hasPermission) {
             abort(403, 'Accès réservé aux administrateurs.');
         }
 

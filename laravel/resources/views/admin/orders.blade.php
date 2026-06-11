@@ -44,6 +44,7 @@
                             </td>
                             <td class="p-3 text-muted-foreground">{{ $order->created_at->format('d/m/Y H:i') }}</td>
                             <td class="p-3">
+                                @canDo('update_orders')
                                 <form action="/admin/orders/{{ $order->id }}/status" method="POST" class="flex gap-2">
                                     @csrf @method('PATCH')
                                     <select name="status" class="text-xs border border-border rounded px-2 py-1 bg-background">
@@ -56,6 +57,13 @@
                                     </select>
                                     <button type="submit" class="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">OK</button>
                                 </form>
+                                @endcanDo
+                                @canDo('delete_orders')
+                                <form action="/admin/orders/{{ $order->id }}" method="POST" class="inline mt-1" onsubmit="return confirm('Supprimer cette commande ?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-destructive hover:opacity-70 text-xs">Supprimer</button>
+                                </form>
+                                @endcanDo
                             </td>
                         </tr>
                     @endforeach

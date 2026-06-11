@@ -29,10 +29,21 @@
                     </span>
                 @endif
             </a>
-            <a href="/login" class="hidden h-10 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground/80 transition hover:border-accent hover:text-accent sm:inline-flex" aria-label="Espace administrateur" title="Espace administrateur">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                Admin
-            </a>
+            @auth
+                <a href="/admin" class="hidden h-10 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground/80 transition hover:border-accent hover:text-accent sm:inline-flex" aria-label="Dashboard admin">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    Dashboard
+                </a>
+                <form action="/logout" method="POST" class="hidden sm:inline">
+                    @csrf
+                    <button type="submit" class="h-10 rounded-md px-3 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">Déconnexion</button>
+                </form>
+            @else
+                <a href="/login" class="hidden h-10 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground/80 transition hover:border-accent hover:text-accent sm:inline-flex" aria-label="Espace administrateur" title="Espace administrateur">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    Admin
+                </a>
+            @endauth
         </div>
     </div>
 </header>
