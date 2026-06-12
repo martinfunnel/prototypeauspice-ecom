@@ -564,27 +564,23 @@ class AdminController extends Controller
         }
         $logs = $logsQuery->get();
 
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'user' => [
-                    'id' => $user->id,
-                    'identifier' => $user->identifier,
-                    'name' => $user->full_name ?? $user->name,
-                    'email' => $user->email,
-                    'roles' => $user->userRoles->pluck('role'),
-                    'created_at' => $user->created_at->format('d/m/Y H:i'),
-                ],
-                'logs' => $logs->map(fn($log) => [
-                    'action' => $log->action,
-                    'description' => $log->description,
-                    'created_at' => $log->created_at->format('d/m/Y H:i'),
-                    'ip' => $log->ip_address,
-                ]),
-                'log_actions' => ActivityLog::where('user_id', $user->id)->distinct()->pluck('action'),
-            ]);
-        }
-
-        return redirect('/admin/users');
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'identifier' => $user->identifier,
+                'name' => $user->full_name ?? $user->name,
+                'email' => $user->email,
+                'roles' => $user->userRoles->pluck('role'),
+                'created_at' => $user->created_at->format('d/m/Y H:i'),
+            ],
+            'logs' => $logs->map(fn($log) => [
+                'action' => $log->action,
+                'description' => $log->description,
+                'created_at' => $log->created_at->format('d/m/Y H:i'),
+                'ip' => $log->ip_address,
+            ]),
+            'log_actions' => ActivityLog::where('user_id', $user->id)->distinct()->pluck('action'),
+        ]);
     }
 
     public function logs(Request $request)
