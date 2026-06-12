@@ -636,6 +636,17 @@ class AdminController extends Controller
         }
 
         $logs = $query->paginate(50)->withQueryString();
+
+        if ($request->ajax() || $request->get('format') === 'json') {
+            return response()->json([
+                'logs' => $logs->items(),
+                'current_page' => $logs->currentPage(),
+                'total' => $logs->total(),
+                'today' => ActivityLog::whereDate('created_at', today())->count(),
+                'this_week' => ActivityLog::where('created_at', '>=', now()->subDays(6))->count(),
+            ]);
+        }
+
         $allActions = collect([
             'stock_adjust', 'create_product', 'update_product', 'delete_product', 'toggle_product', 'set_promo',
             'create_category', 'update_category', 'delete_category',
