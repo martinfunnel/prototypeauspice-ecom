@@ -87,64 +87,7 @@
                     @endif
                 </div>
                 <div class="flex items-center justify-end gap-1">
-                    {{-- Voir --}}
-                    <button type="button" onclick="showProductDetail(this, {{ json_encode([
-                        'id' => $p->id,
-                        'name' => $p->name,
-                        'slug' => $p->slug,
-                        'short_description' => $p->short_description ?? '',
-                        'description' => $p->description ?? '',
-                        'benefits' => $p->benefits ?? [],
-                        'price' => $p->price,
-                        'promo_price' => $p->promo_price,
-                        'promo_ends_at' => $p->promo_ends_at?->format('d/m/Y H:i'),
-                        'promo_ends_at_raw' => $p->promo_ends_at?->format('Y-m-d\TH:i') ?? '',
-                        'stock' => $p->stock,
-                        'category_name' => $p->category?->name ?? '—',
-                        'category_id' => $p->category_id ?? '',
-                        'images' => $p->images ?? [],
-                        'detail_images' => $p->detail_images ?? [],
-                        'is_active' => $p->is_active,
-                        'is_popular' => $p->is_popular,
-                    ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </button>
                     @canDo('edit_products')
-                    {{-- Toggle Active --}}
-                    <form action="/admin/products/{{ $p->id }}/toggle" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="grid h-9 w-9 place-items-center rounded-lg {{ $p->is_active ? 'text-success hover:bg-success/10' : 'text-muted-foreground hover:bg-muted' }} transition" title="{{ $p->is_active ? 'Désactiver' : 'Activer' }}">
-                            @if($p->is_active)
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M5.64 5.64A9 9 0 1 0 20.36 18.36"/><path d="m22 2-2 2"/></svg>
-                            @else
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" x2="12" y1="2" y2="12"/></svg>
-                            @endif
-                        </button>
-                    </form>
-                    {{-- Stock +/- --}}
-                    <form action="/admin/products/{{ $p->id }}/stock" method="POST" class="inline">
-                        @csrf
-                        <input type="hidden" name="amount" value="-1">
-                        <button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Sortie -1">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
-                        </button>
-                    </form>
-                    <form action="/admin/products/{{ $p->id }}/stock" method="POST" class="inline">
-                        @csrf
-                        <input type="hidden" name="amount" value="1">
-                        <button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Entrée +1">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                        </button>
-                    </form>
-                    {{-- Promo --}}
-                    <button type="button" onclick="openPromoInline(this, {{ json_encode([
-                        'id' => $p->id,
-                        'name' => $p->name,
-                        'promo_price' => $p->promo_price ?? '',
-                        'promo_ends_at' => $p->promo_ends_at?->format('Y-m-d\TH:i') ?? '',
-                    ]) }})" class="grid h-9 w-9 place-items-center rounded-lg {{ $p->promo_price ? 'text-accent hover:bg-accent/10' : 'text-foreground/70 hover:bg-muted' }} transition" title="Promotion">
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-                    </button>
                     {{-- Edit --}}
                     <button type="button" onclick="fillForm(this, {{ json_encode([
                         'id' => $p->id,
@@ -173,6 +116,45 @@
                         </button>
                     </form>
                     @endcanDo
+                </div>
+
+                {{-- Détail visible par défaut sous chaque ligne --}}
+                <div class="col-span-full pt-2 text-sm">
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground border-t border-border/50 pt-2">
+                        <span>Slug: <span class="font-mono">/{{ $p->slug }}</span></span>
+                        <span>Catégorie: {{ $p->category?->name ?? '—' }}</span>
+                        @if($p->short_description)
+                            <span class="truncate max-w-[300px]" title="{{ $p->short_description }}">{{ Str::limit($p->short_description, 50) }}</span>
+                        @endif
+                    </div>
+                    @if($p->description && strlen($p->description) > 100)
+                        <p class="mt-1 text-xs text-muted-foreground">{{ Str::limit($p->description, 120) }}</p>
+                    @endif
+                    @if($p->benefits && count($p->benefits))
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            @foreach($p->benefits as $b)
+                                <span class="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                                    <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    {{ $b }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+                    @if($p->promo_price && $p->promo_price < $p->price)
+                        <div class="mt-1 text-xs text-accent font-semibold">
+                            Promo: {{ number_format($p->promo_price, 0, ',', ' ') }} FCFA
+                            @if($p->promo_ends_at)
+                                <span class="text-muted-foreground font-normal">(jusqu'au {{ $p->promo_ends_at->format('d/m/Y H:i') }})</span>
+                            @endif
+                        </div>
+                    @endif
+                    @if($p->images && count($p->images))
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            @foreach($p->images as $img)
+                                <img src="{{ $img }}" alt="" class="h-10 w-10 rounded-md object-cover border border-border">
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             </li>
             @endforeach
