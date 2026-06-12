@@ -12,10 +12,9 @@
 <body class="min-h-screen flex flex-col">
 
     {{-- Header --}}
-    @hasSection('hide-nav')
-    @else
+    @sectionMissing('hide-nav')
         @include('components.site-header')
-    @endhasSection
+    @endsectionMissing
 
     {{-- Contenu principal --}}
     <main class="flex-grow">
