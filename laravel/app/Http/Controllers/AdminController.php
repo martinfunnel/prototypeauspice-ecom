@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -475,16 +476,17 @@ class AdminController extends Controller
         }
 
         $users = $usersQuery->orderBy('name')->get();
-        $availableRoles = ['super_admin', 'admin', 'vendeur', 'comptable'];
+        $availableRoles = Role::pluck('key')->toArray();
         return view('admin.users', compact('users', 'availableRoles', 'q'));
     }
 
     public function storeUser(Request $request)
     {
+        $validRoles = Role::pluck('key')->toArray();
         $validated = $request->validate([
             'full_name' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|string|in:super_admin,admin,vendeur,comptable',
+            'role' => ['required', 'string', Rule::in($validRoles)],
         ]);
 
         // Génération identifiant unique
@@ -542,8 +544,9 @@ class AdminController extends Controller
 
     public function updateUserRole(Request $request, string $id)
     {
+        $validRoles = Role::pluck('key')->toArray();
         $validated = $request->validate([
-            'role' => 'required|string|in:super_admin,admin,vendeur,comptable',
+            'role' => ['required', 'string', Rule::in($validRoles)],
             'action' => 'required|in:add,remove',
         ]);
 

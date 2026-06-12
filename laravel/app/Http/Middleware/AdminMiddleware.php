@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ActivityLog;
+use App\Models\Role;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,8 +17,8 @@ class AdminMiddleware
         }
 
         $user = auth()->user();
-        // Accès admin : super_admin, admin, vendeur, comptable
-        if (!$user->hasAnyRole(['super_admin', 'admin', 'vendeur', 'comptable'])) {
+        $allowedRoles = Role::pluck('key')->toArray();
+        if (!$user->hasAnyRole($allowedRoles)) {
             ActivityLog::create([
                 'user_id' => $user->id,
                 'action' => 'unauthorized_access',
