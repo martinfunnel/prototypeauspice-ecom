@@ -12,9 +12,9 @@
 <body class="min-h-screen flex flex-col">
 
     {{-- Header --}}
-    @sectionMissing('hide-nav')
+    @if(! Illuminate\Support\Facades\View::hasSection('hide-nav'))
         @include('components.site-header')
-    @endsectionMissing
+    @endif
 
     {{-- Contenu principal --}}
     <main class="flex-grow">
