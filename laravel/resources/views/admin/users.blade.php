@@ -112,11 +112,11 @@ $isSuper = auth()->user()->isSuperAdmin();
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                             @if($isSuper && $u->id !== auth()->id())
-                            {{-- Reset password --}}
-                            <form action="/admin/users/{{ $u->id }}/reset-password" method="POST" class="inline" onsubmit="return confirm('Envoyer un email de réinitialisation à {{ $u->email }} ?')">
+                            {{-- Renvoyer l'invitation --}}
+                            <form action="/admin/users/{{ $u->id }}/reset-password" method="POST" class="inline" onsubmit="return confirm('Renvoyer l\'email d\'invitation à {{ $u->email }} ?')">
                                 @csrf
-                                <button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Reset mot de passe">
-                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="1"/><path d="M11 21h8a2 2 0 0 0 2-2v-8"/><path d="m21 3-9 9"/></svg>
+                                <button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Renvoyer l'invitation (définir mot de passe)">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                                 </button>
                             </form>
                             {{-- Supprimer --}}

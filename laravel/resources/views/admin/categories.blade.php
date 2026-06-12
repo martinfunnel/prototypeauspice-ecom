@@ -157,8 +157,8 @@ function accordionOpen(el, callback) {
     el.style.maxHeight = '0';
     el.style.opacity = '0';
     el.style.overflow = 'hidden';
-    el.style.filter = 'blur(4px)';
-    el.style.transition = 'max-height 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease 0.05s, filter 0.35s ease';
+    el.style.filter = 'blur(6px)';
+    el.style.transition = 'max-height 0.8s cubic-bezier(0.34,1.56,0.64,1), opacity 0.6s ease 0.1s, filter 0.7s ease';
     requestAnimationFrame(() => {
         el.style.maxHeight = targetH + 'px';
         el.style.opacity = '1';
@@ -168,31 +168,31 @@ function accordionOpen(el, callback) {
         el.style.maxHeight = '';
         el.style.overflow = '';
         if (callback) callback();
-    }, 420);
+    }, 820);
 }
 function accordionClose(el, callback) {
     const h = el.scrollHeight;
     el.style.maxHeight = h + 'px';
     el.style.overflow = 'hidden';
-    el.style.transition = 'max-height 0.3s ease-in, opacity 0.25s ease, filter 0.25s ease';
+    el.style.transition = 'max-height 0.6s ease-in, opacity 0.5s ease, filter 0.5s ease';
     requestAnimationFrame(() => {
         el.style.maxHeight = '0';
         el.style.opacity = '0';
-        el.style.filter = 'blur(3px)';
+        el.style.filter = 'blur(4px)';
     });
     setTimeout(() => {
         el.style.visibility = 'hidden';
         el.style.display = 'none';
         el.style.filter = '';
         if (callback) callback();
-    }, 320);
+    }, 620);
 }
 function staggerChildren(el) {
     const kids = el.querySelectorAll('div, h3, h4, p, label, button, li, ul, img');
     kids.forEach((c, i) => {
         c.style.opacity = '0';
-        c.style.transform = 'translateY(8px)';
-        c.style.transition = 'opacity 0.25s ease ' + (i * 0.04) + 's, transform 0.25s ease ' + (i * 0.04) + 's';
+        c.style.transform = 'translateY(12px)';
+        c.style.transition = 'opacity 0.5s ease ' + (i * 0.08) + 's, transform 0.5s ease ' + (i * 0.08) + 's';
     });
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {

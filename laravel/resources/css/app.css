@@ -116,7 +116,7 @@
 
 /* Inline panel open / close */
 .detail-panel, .edit-panel {
-    animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     transform-origin: top center;
 }
 
