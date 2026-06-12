@@ -98,8 +98,10 @@
                         'price' => $p->price,
                         'promo_price' => $p->promo_price,
                         'promo_ends_at' => $p->promo_ends_at?->format('d/m/Y H:i'),
+                        'promo_ends_at_raw' => $p->promo_ends_at?->format('Y-m-d\TH:i') ?? '',
                         'stock' => $p->stock,
                         'category_name' => $p->category?->name ?? '—',
+                        'category_id' => $p->category_id ?? '',
                         'images' => $p->images ?? [],
                         'detail_images' => $p->detail_images ?? [],
                         'is_active' => $p->is_active,
@@ -346,7 +348,24 @@ function showProductDetail(btn, data) {
     const wrapper = document.createElement('div');
     wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
 
-    let html = '<div class="grid gap-4 md:grid-cols-2">';
+    let html = '<div class="flex flex-wrap items-center gap-2 mb-4">';
+    html += '<span class="font-display text-sm font-bold mr-auto">' + data.name + '</span>';
+    html += '<form action="/admin/products/' + data.id + '/toggle" method="POST" class="inline">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}">'
+        + '<button type="submit" class="grid h-9 w-9 place-items-center rounded-lg ' + (data.is_active ? 'text-success hover:bg-success/10' : 'text-muted-foreground hover:bg-muted') + ' transition" title="' + (data.is_active ? 'Désactiver' : 'Activer') + '">' + (data.is_active
+            ? '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M5.64 5.64A9 9 0 1 0 20.36 18.36"/><path d="m22 2-2 2"/></svg>'
+            : '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" x2="12" y1="2" y2="12"/></svg>') + '</button></form>';
+    html += '<form action="/admin/products/' + data.id + '/stock" method="POST" class="inline">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="amount" value="-1">'
+        + '<button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Sortie -1"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button></form>';
+    html += '<form action="/admin/products/' + data.id + '/stock" method="POST" class="inline">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="amount" value="1">'
+        + '<button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Entrée +1"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></form>';
+    html += '<button type="button" onclick="openPromoInline(this, ' + JSON.stringify({id:data.id,name:data.name,promo_price:data.promo_price ?? '',promo_ends_at:data.promo_ends_at_raw ?? ''}).replace(/"/g,'&quot;') + ')" class="grid h-9 w-9 place-items-center rounded-lg ' + (data.promo_price ? 'text-accent hover:bg-accent/10' : 'text-foreground/70 hover:bg-muted') + ' transition" title="Promotion"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></button>';
+    html += '<button type="button" onclick="fillForm(this, ' + JSON.stringify({id:data.id,name:data.name,slug:data.slug,short_description:data.short_description ?? '',description:data.description ?? '',benefits:Array.isArray(data.benefits)?data.benefits.join("\\n"):(data.benefits??''),price:data.price,promo_price:data.promo_price ?? '',stock:data.stock,category_id:data.category_id ?? '',images:'',detail_images:'',is_active:data.is_active,is_popular:data.is_popular}).replace(/"/g,'&quot;') + ')" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Modifier"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
+    html += '</div>';
+
+    html += '<div class="grid gap-4 md:grid-cols-2">';
     html += '<div class="space-y-2 text-sm">';
     html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Slug :</span><span class="font-mono text-muted-foreground">/' + data.slug + '</span></div>';
     html += '<div class="flex gap-2"><span class="text-muted-foreground w-24">Catégorie :</span><span>' + data.category_name + '</span></div>';
