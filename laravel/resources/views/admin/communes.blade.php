@@ -58,8 +58,20 @@
                     </span>
                 </div>
                 <div class="flex items-center justify-end gap-1">
+                    <button type="button" onclick="showCommuneDetail(this, {{ json_encode([
+                        'id' => $c->id,
+                        'name' => $c->name,
+                        'zone' => $c->zone,
+                        'delivery_fee' => $c->delivery_fee,
+                        'delivery_days' => $c->delivery_days,
+                        'is_active' => $c->is_active,
+                        'created_at' => $c->created_at?->format('d/m/Y H:i') ?? '—',
+                        'updated_at' => $c->updated_at?->format('d/m/Y H:i') ?? '—',
+                    ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
                     @canDo('edit_communes')
-                    <button type="button" onclick="fillForm({{ json_encode([
+                    <button type="button" onclick="fillForm(this, {{ json_encode([
                         'id' => $c->id,
                         'name' => $c->name,
                         'zone' => $c->zone,
@@ -85,43 +97,6 @@
     </div>
 @endif
 
-{{-- Inline form (hidden by default) --}}
-<div id="commune-form" class="hidden mt-6 rounded-2xl border border-border bg-card shadow-card p-5">
-    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouvelle commune</h2>
-    <form id="commune-form-tag" action="/admin/communes" method="POST" class="space-y-3">
-        @csrf
-        <input type="hidden" name="_method" id="method-override" value="">
-        <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
-                <input type="text" name="name" id="f-name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zone *</span>
-                <input type="text" name="zone" id="f-zone" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-        <div class="grid gap-3 sm:grid-cols-3">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Frais livraison (FCFA) *</span>
-                <input type="number" name="delivery_fee" id="f-delivery_fee" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Délai (jours) *</span>
-                <input type="number" name="delivery_days" id="f-delivery_days" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="flex items-center gap-2 pt-6 text-sm">
-                <input type="checkbox" name="is_active" id="f-is_active" value="1" checked class="rounded border-border">
-                Active
-            </label>
-        </div>
-        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
-            <button type="button" onclick="document.getElementById('commune-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
-            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
-        </div>
-    </form>
-</div>
-
 <script>
 function filterCommunes() {
     const q = document.getElementById('search-communes').value.toLowerCase();
@@ -132,20 +107,54 @@ function filterCommunes() {
     });
 }
 
-function fillForm(data) {
-    const form = document.getElementById('commune-form');
-    form.classList.remove('hidden');
-    document.getElementById('form-title').textContent = 'Modifier la commune';
-    document.getElementById('commune-form-tag').action = '/admin/communes/' + data.id;
-    document.getElementById('method-override').value = 'PATCH';
+function showCommuneDetail(btn, data) {
+    const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('detail-panel')) {
+        panel.remove();
+        return;
+    }
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
 
-    document.getElementById('f-name').value = data.name;
-    document.getElementById('f-zone').value = data.zone;
-    document.getElementById('f-delivery_fee').value = data.delivery_fee;
-    document.getElementById('f-delivery_days').value = data.delivery_days;
-    document.getElementById('f-is_active').checked = data.is_active;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.innerHTML = '<div class="grid gap-3 sm:grid-cols-2 md:grid-cols-4 text-sm">'
+        + '<div><span class="text-muted-foreground text-xs uppercase">Nom</span><p class="font-semibold">' + data.name + '</p></div>'
+        + '<div><span class="text-muted-foreground text-xs uppercase">Zone</span><p class="font-semibold">' + data.zone + '</p></div>'
+        + '<div><span class="text-muted-foreground text-xs uppercase">Frais livraison</span><p class="font-semibold">' + Number(data.delivery_fee).toLocaleString('fr-FR') + ' FCFA</p></div>'
+        + '<div><span class="text-muted-foreground text-xs uppercase">Délai</span><p class="font-semibold">' + data.delivery_days + ' j</p></div>'
+        + '</div>'
+        + '<div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">'
+        + '<span class="inline-flex items-center rounded-full px-2 py-0.5 font-semibold ' + (data.is_active ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground') + '">' + (data.is_active ? 'Active' : 'Inactive') + '</span>'
+        + '<span>Créée le ' + data.created_at + '</span>'
+        + '<span>Modifiée le ' + data.updated_at + '</span>'
+        + '</div>';
+    li.after(wrapper);
+}
 
-    form.scrollIntoView({ behavior: 'smooth' });
+function fillForm(btn, data) {
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
+    const li = btn.closest('li');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.innerHTML = '<h3 class="font-display text-sm font-bold mb-3">Modifier « ' + data.name + ' »</h3>'
+        + '<form action="/admin/communes/' + data.id + '" method="POST" class="space-y-3">'
+        + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH">'
+        + '<div class="grid gap-3 sm:grid-cols-2">'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Nom *</span><input type="text" name="name" required value="' + (data.name ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Zone *</span><input type="text" name="zone" required value="' + (data.zone ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '</div>'
+        + '<div class="grid gap-3 sm:grid-cols-3">'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Frais livraison (FCFA) *</span><input type="number" name="delivery_fee" required min="0" value="' + (data.delivery_fee ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="block"><span class="mb-1 block text-xs font-semibold">Délai (jours) *</span><input type="number" name="delivery_days" required min="0" value="' + (data.delivery_days ?? '') + '" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
+        + '<label class="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" name="is_active" value="1" ' + (data.is_active ? 'checked' : '') + ' class="rounded border-border"> Active</label>'
+        + '</div>'
+        + '<div class="flex justify-end gap-2 border-t border-border pt-3 mt-2">'
+        + '<button type="button" onclick="this.closest(\'.edit-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>'
+        + '<button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>'
+        + '</div></form>';
+    li.after(wrapper);
 }
 </script>
 @endsection
