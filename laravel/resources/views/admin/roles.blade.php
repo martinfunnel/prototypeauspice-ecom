@@ -12,8 +12,39 @@
             <div class="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg mb-6">{{ session('error') }}</div>
         @endif
 
-        <div class="mb-4 flex items-center justify-between">
-            <button type="button" onclick="document.getElementById('role-create-form').classList.toggle('hidden'); this.classList.add('hidden');" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90">
+        {{-- Stats cards --}}
+        @php
+            $totalRoles = $roles->count();
+            $totalPerms = \App\Models\Permission::count();
+            $systemRoles = $roles->filter(fn($r) => in_array($r->key, ['super_admin', 'admin', 'manager', 'viewer']))->count();
+            $customRoles = $totalRoles - $systemRoles;
+        @endphp
+        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rôles</p>
+                <p class="mt-1 font-display text-2xl font-bold">{{ $totalRoles }}</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Permissions</p>
+                <p class="mt-1 font-display text-2xl font-bold">{{ $totalPerms }}</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Système</p>
+                <p class="mt-1 font-display text-2xl font-bold">{{ $systemRoles }}</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-4 shadow-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personnalisés</p>
+                <p class="mt-1 font-display text-2xl font-bold">{{ $customRoles }}</p>
+            </div>
+        </div>
+
+        {{-- Filter + Create button --}}
+        <div class="mb-4 flex flex-wrap items-center gap-2">
+            <div class="relative flex-1 min-w-[200px]">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="role-search" placeholder="Filtrer rôles…" class="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:border-accent">
+            </div>
+            <button type="button" id="btn-create-role" onclick="document.getElementById('role-create-form').classList.toggle('hidden'); this.classList.add('hidden');" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90">
                 + Créer un rôle
             </button>
         </div>
@@ -43,7 +74,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground">Créer le rôle</button>
-                    <button type="button" onclick="document.getElementById('role-create-form').classList.add('hidden'); document.querySelector('[onclick*=role-create-form]').classList.remove('hidden');" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>
+                    <button type="button" onclick="document.getElementById('role-create-form').classList.add('hidden'); document.getElementById('btn-create-role').classList.remove('hidden');" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>
                 </div>
             </form>
         </div>
@@ -60,7 +91,8 @@
                 </thead>
                 <tbody>
                     @foreach($roles as $r)
-                        <tr class="border-b border-border hover:bg-muted transition role-row">
+                        <tr class="border-b border-border hover:bg-muted transition role-row"
+                            data-text="{{ strtolower($r->key . ' ' . $r->name) }}">
                             <td class="p-3 font-medium text-foreground">{{ $r->key }}</td>
                             <td class="p-3 text-foreground">{{ $r->name }}</td>
                             <td class="p-3 text-muted-foreground">{{ $r->permissions->count() }} permission(s)</td>
@@ -185,5 +217,14 @@ function showRoleDetail(btn, data) {
         + '</td>';
     tr.after(wrapper);
 }
+
+/* ---- Live filter ---- */
+document.getElementById('role-search').addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.role-row').forEach(row => {
+        const text = row.dataset.text;
+        row.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+});
 </script>
 @endsection
