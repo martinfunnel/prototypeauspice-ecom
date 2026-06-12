@@ -26,6 +26,7 @@
                 @isSuperAdmin
                     <a href="/admin/users" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/users*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Utilisateurs</a>
                     <a href="/admin/roles" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/roles*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Rôles</a>
+                    <a href="/admin/logs" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/logs*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Logs</a>
                 @endisSuperAdmin
             </div>
         </div>

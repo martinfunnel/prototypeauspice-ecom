@@ -587,6 +587,32 @@ class AdminController extends Controller
         return redirect('/admin/users');
     }
 
+    public function logs(Request $request)
+    {
+        $query = ActivityLog::with('user')->orderByDesc('created_at');
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where(function ($sub) use ($q) {
+                $sub->where('action', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%")
+                    ->orWhere('model_type', 'like', "%{$q}%");
+            });
+        }
+
+        $logs = $query->paginate(50)->withQueryString();
+        $actions = ActivityLog::distinct()->orderBy('action')->pluck('action');
+        $users = User::orderBy('name')->get(['id', 'name', 'identifier']);
+
+        return view('admin.logs', compact('logs', 'actions', 'users'));
+    }
+
     private function logActivity(string $action, ?string $description = null, ?string $modelType = null, ?string $modelId = null, ?array $metadata = null): void
     {
         ActivityLog::create([
