@@ -109,5 +109,41 @@
     </section>
 </div>
 
+{{-- Page loader --}}
+<div id="page-loader" class="page-loader hidden">
+    <div style="position:relative">
+        <div class="loader-pulse"></div>
+        <div class="loader-ring"></div>
+    </div>
+    <div class="loader-text">Chargement</div>
+    <div class="loader-bar"></div>
+</div>
+
+<script>
+// Show loader on admin navigation
+(function() {
+    const loader = document.getElementById('page-loader');
+    function showLoader() { loader.classList.remove('hidden'); }
+    function hideLoader() { loader.classList.add('hidden'); }
+
+    // Intercept sidebar & nav links
+    document.querySelectorAll('aside a, .admin-nav a').forEach(a => {
+        a.addEventListener('click', () => showLoader());
+    });
+
+    // Intercept form submits (except AJAX/inline)
+    document.querySelectorAll('form').forEach(f => {
+        if (!f.closest('.detail-panel') && !f.closest('.edit-panel')) {
+            f.addEventListener('submit', () => showLoader());
+        }
+    });
+
+    // Hide when page fully loaded
+    window.addEventListener('pageshow', hideLoader);
+    if (document.readyState === 'complete') hideLoader();
+    else window.addEventListener('load', hideLoader);
+})();
+</script>
+
 </body>
 </html>

@@ -1,6 +1,6 @@
 @auth
     @if(request()->is('admin*'))
-        <div class="border-b border-border bg-card">
+        <div class="admin-nav border-b border-border bg-card">
             <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap gap-1">
                 @canDo('view_dashboard')
                     <a href="/admin" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Tableau de bord</a>
