@@ -28,7 +28,7 @@
 </div>
 
 {{-- Formulaire création / édition (AVANT la liste) --}}
-<div id="category-form" class="hidden mb-6 rounded-2xl border border-border bg-card shadow-card p-5">
+<div id="category-form" class="mb-6 rounded-2xl border border-border bg-card shadow-card p-5 overflow-hidden transition-all duration-300 ease-out" style="max-height:0; opacity:0; padding-top:0; padding-bottom:0; border-width:0; margin-bottom:0; visibility:hidden;">
     <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouvelle catégorie</h2>
     <form id="category-form-tag" action="/admin/categories" method="POST" enctype="multipart/form-data" class="space-y-3">
         @csrf
@@ -64,7 +64,7 @@
         </div>
 
         <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
-            <button type="button" onclick="document.getElementById('category-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
+            <button type="button" onclick="slideUp(document.getElementById('category-form'))" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
             <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
         </div>
     </form>
@@ -149,17 +149,59 @@
 @endif
 
 <script>
+/* ---- Helpers animation ---- */
+function slideDown(el, duration = 350) {
+    el.style.maxHeight = '2000px';
+    el.style.opacity = '1';
+    el.style.paddingTop = '';
+    el.style.paddingBottom = '';
+    el.style.borderWidth = '';
+    el.style.marginBottom = '';
+    el.style.visibility = 'visible';
+    el.style.overflow = 'hidden';
+}
+function slideUp(el, callback) {
+    el.style.maxHeight = '0';
+    el.style.opacity = '0';
+    el.style.paddingTop = '0';
+    el.style.paddingBottom = '0';
+    el.style.borderWidth = '0';
+    el.style.marginBottom = '0';
+    setTimeout(() => {
+        el.style.visibility = 'hidden';
+        if (callback) callback();
+    }, 300);
+}
+function animatePanel(el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-8px) scale(0.98)';
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            el.style.transition = 'opacity 0.25s cubic-bezier(0.16,1,0.3,1), transform 0.25s cubic-bezier(0.16,1,0.3,1)';
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+}
+function closePanel(el) {
+    el.style.transition = 'opacity 0.2s ease, transform 0.2s ease, max-height 0.2s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px) scale(0.98)';
+    el.style.maxHeight = '0';
+    setTimeout(() => el.remove(), 220);
+}
+
 function showDetail(btn, data) {
     const li = btn.closest('li');
     let panel = li.nextElementSibling;
     if (panel && panel.classList.contains('detail-panel')) {
-        panel.remove();
+        closePanel(panel);
         return;
     }
-    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => closePanel(el));
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
 
     let html = '<div class="flex items-start gap-4 mb-3">';
     if (data.image_url) {
@@ -194,13 +236,14 @@ function showDetail(btn, data) {
 
     wrapper.innerHTML = html;
     li.after(wrapper);
+    animatePanel(wrapper);
 }
 
 function toggleForm() {
     const form = document.getElementById('category-form');
-    const isHidden = form.classList.contains('hidden');
-    if (isHidden) {
-        form.classList.remove('hidden');
+    const isOpen = form.style.visibility !== 'hidden' && form.style.visibility !== '';
+    if (!isOpen) {
+        document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => closePanel(el));
         document.getElementById('form-title').textContent = 'Nouvelle catégorie';
         document.getElementById('category-form-tag').action = '/admin/categories';
         document.getElementById('method-override').value = '';
@@ -210,8 +253,9 @@ function toggleForm() {
         document.getElementById('f-slug').value = '';
         document.getElementById('f-description').value = '';
         document.getElementById('f-sort_order').value = '';
+        slideDown(form);
     } else {
-        form.classList.add('hidden');
+        slideUp(form);
     }
 }
 
@@ -225,11 +269,11 @@ function filterCategories() {
 }
 
 function fillForm(btn, data) {
-    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => closePanel(el));
     const li = btn.closest('li');
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
     wrapper.innerHTML = '<h3 class="font-display text-sm font-bold mb-3">Modifier « ' + data.name + ' »</h3>'
         + '<form action="/admin/categories/' + data.id + '" method="POST" enctype="multipart/form-data" class="space-y-3">'
         + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH">'
@@ -244,16 +288,16 @@ function fillForm(btn, data) {
         + '<div class="block"><span class="mb-1 block text-xs font-semibold">Image (JPEG/PNG)</span><input type="file" name="image" accept="image/jpeg,image/png" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></div>'
         + '</div>'
         + '<div class="flex justify-end gap-2 border-t border-border pt-3 mt-2">'
-        + '<button type="button" onclick="this.closest(\'.edit-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
+        + '<button type="button" onclick="closePanel(this.closest(\'.edit-panel\'))" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
         + '<button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Enregistrer</button>'
         + '</div></form>';
     li.after(wrapper);
+    animatePanel(wrapper);
 }
 
 function removeImage() {
     document.getElementById('f-existing_image').value = '';
     document.getElementById('f-image-preview').innerHTML = '';
-    // Ajouter un champ hidden pour signaler la suppression
     const form = document.getElementById('category-form-tag');
     let existing = form.querySelector('input[name="remove_image"]');
     if (!existing) {
