@@ -54,19 +54,21 @@ $totalLogs = $logs->total();
     </div>
 @else
     <div class="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-        <div class="hidden md:grid grid-cols-[140px_1fr_120px_100px_100px] gap-3 border-b border-border bg-muted/40 px-4 py-2 text-xs font-semibold uppercase text-muted-foreground">
+        <div class="hidden md:grid grid-cols-[140px_1fr_120px_100px_80px_100px] gap-3 border-b border-border bg-muted/40 px-4 py-2 text-xs font-semibold uppercase text-muted-foreground">
             <div>Date</div>
             <div>Action / Description</div>
             <div>Modèle</div>
             <div class="text-center">IP</div>
+            <div class="text-center">Voir</div>
             <div class="text-right">Utilisateur</div>
         </div>
         <ul class="divide-y divide-border">
             @foreach($logs as $log)
             @php
                 $isError = in_array($log->action, ['unauthorized_access', 'validation_error', 'error']);
+                $metadata = $log->metadata ? json_encode($log->metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : null;
             @endphp
-            <li class="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[140px_1fr_120px_100px_100px] md:items-center text-sm {{ $isError ? 'bg-destructive/5' : '' }}">
+            <li class="log-row grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[140px_1fr_120px_100px_80px_100px] md:items-center text-sm {{ $isError ? 'bg-destructive/5' : '' }}">
                 <div class="text-xs text-muted-foreground">{{ $log->created_at->format('d/m/Y H:i') }}</div>
                 <div class="min-w-0">
                     <div class="text-xs font-semibold uppercase {{ $isError ? 'text-destructive' : 'text-accent' }}">{{ $log->action }}</div>
@@ -83,6 +85,21 @@ $totalLogs = $logs->total();
                     @endif
                 </div>
                 <div class="text-xs text-muted-foreground font-mono text-center">{{ $log->ip_address ?? '—' }}</div>
+                <div class="flex justify-center">
+                    <button type="button" onclick="showLogDetail(this, {{ json_encode([
+                        'action' => $log->action,
+                        'description' => $log->description ?? '—',
+                        'model_type' => $log->model_type ? class_basename($log->model_type) : null,
+                        'model_id' => $log->model_id,
+                        'ip' => $log->ip_address,
+                        'metadata' => $metadata,
+                        'user_name' => $log->user?->name ?? $log->user?->identifier ?? 'Système',
+                        'user_id' => $log->user_id,
+                        'created_at' => $log->created_at->format('d/m/Y H:i:s'),
+                    ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir détails">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
                 <div class="text-right text-xs">
                     @if($log->user)
                         <span class="font-medium">{{ $log->user->name ?? $log->user->identifier }}</span>
@@ -93,6 +110,41 @@ $totalLogs = $logs->total();
             </li>
             @endforeach
         </ul>
+
+<script>
+function showLogDetail(btn, data) {
+    const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('detail-panel')) {
+        panel.remove();
+        return;
+    }
+    document.querySelectorAll('.detail-panel').forEach(el => el.remove());
+
+    const wrapper = document.createElement('li');
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+
+    let html = '<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">';
+    html += '<div><span class="text-muted-foreground text-xs uppercase">Action</span><p class="font-semibold">' + data.action + '</p></div>';
+    html += '<div><span class="text-muted-foreground text-xs uppercase">Utilisateur</span><p class="font-semibold">' + data.user_name + '</p></div>';
+    html += '<div><span class="text-muted-foreground text-xs uppercase">Date</span><p class="font-semibold">' + data.created_at + '</p></div>';
+    html += '<div><span class="text-muted-foreground text-xs uppercase">IP</span><p class="font-mono font-semibold">' + (data.ip ?? '—') + '</p></div>';
+    html += '</div>';
+
+    html += '<div class="mt-3"><span class="text-muted-foreground text-xs uppercase">Description</span><p class="text-sm text-foreground">' + data.description + '</p></div>';
+
+    if (data.model_type) {
+        html += '<div class="mt-2"><span class="text-muted-foreground text-xs uppercase">Modèle</span><p class="text-sm font-mono">' + data.model_type + (data.model_id ? ' #' + data.model_id : '') + '</p></div>';
+    }
+
+    if (data.metadata && data.metadata !== 'null') {
+        html += '<div class="mt-3"><span class="text-muted-foreground text-xs uppercase">Métadonnées (mode dev)</span><pre class="mt-1 rounded-lg border border-border bg-black/5 p-3 text-[11px] font-mono text-foreground overflow-x-auto">' + data.metadata.replace(/</g, '&lt;') + '</pre></div>';
+    }
+
+    wrapper.innerHTML = html;
+    li.after(wrapper);
+}
+</script>
     </div>
 
     <div class="mt-4">
