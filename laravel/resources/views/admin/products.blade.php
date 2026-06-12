@@ -276,12 +276,12 @@ function fillForm(data) {
     document.getElementById('f-stock').value = data.stock;
     document.getElementById('f-category_id').value = data.category_id;
 
-    // Images existantes
-    const existingImages = data.images ? data.images.split('\n').filter(u => u.trim()) : [];
+    // Images existantes (data.images peut être un tableau JS ou une chaîne séparée par \n)
+    const existingImages = Array.isArray(data.images) ? data.images : (data.images ? data.images.split('\n').filter(u => u.trim()) : []);
     document.getElementById('f-existing_images').value = existingImages.join('\n');
     renderPreview('preview-product-images', existingImages, 'f-existing_images');
 
-    const existingDetailImages = data.detail_images ? data.detail_images.split('\n').filter(u => u.trim()) : [];
+    const existingDetailImages = Array.isArray(data.detail_images) ? data.detail_images : (data.detail_images ? data.detail_images.split('\n').filter(u => u.trim()) : []);
     document.getElementById('f-existing_detail_images').value = existingDetailImages.join('\n');
     renderPreview('preview-detail-images', existingDetailImages, 'f-existing_detail_images');
 
