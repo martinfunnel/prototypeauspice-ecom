@@ -144,9 +144,9 @@ button:active, [type="button"]:active, [type="submit"]:active {
 
 /* Page loading overlay */
 .page-loader {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    z-index: 9999;
+    z-index: 50;
     display: flex;
     flex-direction: column;
     align-items: center;

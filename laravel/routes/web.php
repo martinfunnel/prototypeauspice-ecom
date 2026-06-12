@@ -26,6 +26,7 @@ Route::post('/commande-directe', [OrderController::class, 'storeDirect'])->name(
 
 Route::get('/suivi', [TrackController::class, 'index'])->name('track');
 Route::post('/suivi', [TrackController::class, 'search'])->name('track.search');
+Route::get('/suivi/{order}', [TrackController::class, 'show'])->name('track.show');
 
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -72,6 +73,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
 
     // Orders
     Route::middleware('can:view_orders')->get('/orders', [AdminController::class, 'orders'])->name('admin.orders');
+    Route::middleware('can:view_orders')->get('/orders/pending-count', [AdminController::class, 'pendingOrdersCount']);
     Route::middleware('can:update_orders')->patch('/orders/{id}/status', [AdminController::class, 'updateOrderStatus']);
     Route::middleware('can:delete_orders')->delete('/orders/{id}', [AdminController::class, 'destroyOrder']);
 
@@ -96,6 +98,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
         Route::post('/users/{id}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role');
         Route::post('/users/{id}/reset-password', [AdminController::class, 'resetUserPassword'])->name('admin.users.reset');
         Route::get('/users/{id}/details', [AdminController::class, 'userDetails'])->name('admin.users.details');
+        Route::get('/users/{id}/logs', [AdminController::class, 'userLogs'])->name('admin.users.logs');
 
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole']);

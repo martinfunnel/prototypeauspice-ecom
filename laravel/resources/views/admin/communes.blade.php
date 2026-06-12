@@ -107,13 +107,14 @@ function showCommuneDetail(btn, data) {
     const li = btn.closest('li');
     let panel = li.nextElementSibling;
     if (panel && panel.classList.contains('detail-panel')) {
-        panel.remove();
+        closePanelAnim(panel);
         return;
     }
-    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => closePanelAnim(el));
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
+    wrapper.style.display = 'none';
     wrapper.innerHTML = '<div class="grid gap-3 sm:grid-cols-2 md:grid-cols-4 text-sm">'
         + '<div><span class="text-muted-foreground text-xs uppercase">Nom</span><p class="font-semibold">' + data.name + '</p></div>'
         + '<div><span class="text-muted-foreground text-xs uppercase">Zone</span><p class="font-semibold">' + data.zone + '</p></div>'
@@ -126,14 +127,16 @@ function showCommuneDetail(btn, data) {
         + '<span>Modifiée le ' + data.updated_at + '</span>'
         + '</div>';
     li.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 
 function fillForm(btn, data) {
-    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => closePanelAnim(el));
     const li = btn.closest('li');
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
+    wrapper.style.display = 'none';
     wrapper.innerHTML = '<h3 class="font-display text-sm font-bold mb-3">Modifier « ' + data.name + ' »</h3>'
         + '<form action="/admin/communes/' + data.id + '" method="POST" class="space-y-3">'
         + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH">'
@@ -147,10 +150,11 @@ function fillForm(btn, data) {
         + '<label class="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" name="is_active" value="1" ' + (data.is_active ? 'checked' : '') + ' class="rounded border-border"> Active</label>'
         + '</div>'
         + '<div class="flex justify-end gap-2 border-t border-border pt-3 mt-2">'
-        + '<button type="button" onclick="this.closest(\'.edit-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>'
+        + '<button type="button" onclick="closePanelAnim(this.closest(\'.edit-panel\'))" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>'
         + '<button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>'
         + '</div></form>';
     li.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 </script>
 @endsection

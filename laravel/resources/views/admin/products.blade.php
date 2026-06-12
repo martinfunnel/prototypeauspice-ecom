@@ -29,10 +29,102 @@
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="text" id="search-products" oninput="filterProducts()" placeholder="Rechercher un produit…" class="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm shadow-sm outline-none focus:border-accent">
     </div>
-    <button type="button" onclick="document.getElementById('product-form').classList.toggle('hidden'); document.getElementById('form-title').textContent = 'Nouveau produit'; document.getElementById('product-form-tag').action = '/admin/products'; document.getElementById('method-override').value = '';" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+    <button type="button" id="btn-new-product" onclick="const f=document.getElementById('product-form'); if(f.style.display==='none'||f.style.display===''){accordionOpen(f,()=>staggerChildren(f)); document.getElementById('form-title').textContent='Nouveau produit'; document.getElementById('product-form-tag').action='/admin/products'; document.getElementById('method-override').value='';} else {accordionClose(f);}" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Nouveau produit
     </button>
+</div>
+
+{{-- Formulaire création / édition --}}
+<div id="product-form" class="mt-6 rounded-2xl border border-border bg-card shadow-card p-5" style="display:none;">
+    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouveau produit</h2>
+    <form id="product-form-tag" action="/admin/products" method="POST" class="space-y-3">
+        @csrf
+        <input type="hidden" name="_method" id="method-override" value="">
+
+        <div class="grid gap-3 sm:grid-cols-2">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
+                <input type="text" name="name" id="f-name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slug</span>
+                <input type="text" name="slug" id="f-slug" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+        </div>
+
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description courte</span>
+            <input type="text" name="short_description" id="f-short_description" maxlength="300" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </label>
+
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description complète</span>
+            <textarea name="description" id="f-description" rows="4" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
+        </label>
+
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avantages / bénéfices (un par ligne)</span>
+            <textarea name="benefits" id="f-benefits" rows="4" placeholder="100% naturel&#10;Livraison rapide&#10;Garantie satisfait ou remboursé" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
+        </label>
+
+        <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix (FCFA) *</span>
+                <input type="number" name="price" id="f-price" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix promo</span>
+                <input type="number" name="promo_price" id="f-promo_price" min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stock *</span>
+                <input type="number" name="stock" id="f-stock" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            </label>
+        </div>
+
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catégorie</span>
+            <select name="category_id" id="f-category_id" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                <option value="">— Aucune —</option>
+                @foreach($categories as $c)
+                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                @endforeach
+            </select>
+        </label>
+
+        {{-- Images du produit --}}
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images du produit (JPEG/PNG)</span>
+            <input type="file" name="product_images[]" id="f-product_images" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            <input type="hidden" name="existing_images" id="f-existing_images" value="">
+            <div id="preview-product-images" class="mt-3 flex flex-wrap gap-2"></div>
+        </div>
+
+        {{-- Images détails --}}
+        <div class="block">
+            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images de la section « Détails » (JPEG/PNG)</span>
+            <input type="file" name="detail_product_images[]" id="f-detail_product_images" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+            <input type="hidden" name="existing_detail_images" id="f-existing_detail_images" value="">
+            <div id="preview-detail-images" class="mt-3 flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="flex flex-wrap gap-4 pt-1">
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="is_active" id="f-is_active" value="1" checked class="rounded border-border">
+                Actif (visible)
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="is_popular" id="f-is_popular" value="1" class="rounded border-border">
+                Mis en avant
+            </label>
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
+            <button type="button" onclick="accordionClose(document.getElementById('product-form'));" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
+            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
+        </div>
+    </form>
 </div>
 
 @if($products->isEmpty())
@@ -141,98 +233,6 @@
     </div>
 @endif
 
-{{-- Formulaire création / édition --}}
-<div id="product-form" class="hidden mt-6 rounded-2xl border border-border bg-card shadow-card p-5">
-    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouveau produit</h2>
-    <form id="product-form-tag" action="/admin/products" method="POST" class="space-y-3">
-        @csrf
-        <input type="hidden" name="_method" id="method-override" value="">
-
-        <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
-                <input type="text" name="name" id="f-name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slug</span>
-                <input type="text" name="slug" id="f-slug" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description courte</span>
-            <input type="text" name="short_description" id="f-short_description" maxlength="300" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-        </label>
-
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description complète</span>
-            <textarea name="description" id="f-description" rows="4" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
-
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avantages / bénéfices (un par ligne)</span>
-            <textarea name="benefits" id="f-benefits" rows="4" placeholder="100% naturel&#10;Livraison rapide&#10;Garantie satisfait ou remboursé" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
-
-        <div class="grid gap-3 sm:grid-cols-3">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix (FCFA) *</span>
-                <input type="number" name="price" id="f-price" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix promo</span>
-                <input type="number" name="promo_price" id="f-promo_price" min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stock *</span>
-                <input type="number" name="stock" id="f-stock" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catégorie</span>
-            <select name="category_id" id="f-category_id" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-                <option value="">— Aucune —</option>
-                @foreach($categories as $c)
-                    <option value="{{ $c->id }}">{{ $c->name }}</option>
-                @endforeach
-            </select>
-        </label>
-
-        {{-- Images du produit --}}
-        <div class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images du produit (JPEG/PNG)</span>
-            <input type="file" name="product_images[]" id="f-product_images" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            <input type="hidden" name="existing_images" id="f-existing_images" value="">
-            <div id="preview-product-images" class="mt-3 flex flex-wrap gap-2"></div>
-        </div>
-
-        {{-- Images détails --}}
-        <div class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images de la section « Détails » (JPEG/PNG)</span>
-            <input type="file" name="detail_product_images[]" id="f-detail_product_images" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            <input type="hidden" name="existing_detail_images" id="f-existing_detail_images" value="">
-            <div id="preview-detail-images" class="mt-3 flex flex-wrap gap-2"></div>
-        </div>
-
-        <div class="flex flex-wrap gap-4 pt-1">
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_active" id="f-is_active" value="1" checked class="rounded border-border">
-                Actif (visible)
-            </label>
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_popular" id="f-is_popular" value="1" class="rounded border-border">
-                Mis en avant
-            </label>
-        </div>
-
-        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
-            <button type="button" onclick="document.getElementById('product-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
-            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
-        </div>
-    </form>
-</div>
-
 <script>
 function renderPreview(containerId, urls, inputId) {
     const container = document.getElementById(containerId);
@@ -300,14 +300,15 @@ function showProductDetail(btn, data) {
     const li = btn.closest('li');
     let panel = li.nextElementSibling;
     if (panel && panel.classList.contains('detail-panel')) {
-        panel.remove();
+        closePanelAnim(panel);
         return;
     }
     // close other panels
-    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => closePanelAnim(el));
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
+    wrapper.style.display = 'none';
 
     let html = '<div class="flex flex-wrap items-center gap-2 mb-4">';
     html += '<span class="font-display text-sm font-bold mr-auto">' + data.name + '</span>';
@@ -365,36 +366,40 @@ function showProductDetail(btn, data) {
 
     wrapper.innerHTML = html;
     li.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 
 function openPromoInline(btn, data) {
     const li = btn.closest('li');
     let panel = li.nextElementSibling;
     if (panel && panel.classList.contains('promo-panel')) {
-        panel.remove();
+        closePanelAnim(panel);
         return;
     }
-    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => closePanelAnim(el));
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'promo-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'promo-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
+    wrapper.style.display = 'none';
     wrapper.innerHTML = '<form action="/admin/products/' + data.id + '/promo" method="POST" class="flex flex-wrap items-end gap-3">'
         + '<input type="hidden" name="_token" value="{{ csrf_token() }}">'
         + '<label class="block"><span class="text-xs font-semibold">Prix promo</span><input type="number" name="promo_price" value="' + (data.promo_price ?? '') + '" min="0" class="mt-1 w-40 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
         + '<label class="block"><span class="text-xs font-semibold">Fin promo</span><input type="datetime-local" name="promo_ends_at" value="' + (data.promo_ends_at ?? '') + '" class="mt-1 w-48 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></label>'
         + '<button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Appliquer</button>'
-        + '<button type="button" onclick="this.closest(\'.promo-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
+        + '<button type="button" onclick="closePanelAnim(this.closest(\'.promo-panel\'))" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
         + '</form>';
     li.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 
 function fillForm(btn, data) {
-    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => closePanelAnim(el));
     const li = btn.closest('li');
 
     // build inline edit panel
     const wrapper = document.createElement('div');
-    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
+    wrapper.style.display = 'none';
     wrapper.innerHTML = '<h3 class="font-display text-sm font-bold mb-3">Modifier « ' + data.name + ' »</h3>'
         + '<form action="/admin/products/' + data.id + '" method="POST" enctype="multipart/form-data" class="space-y-3">'
         + '<input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="PATCH">'
@@ -421,83 +426,12 @@ function fillForm(btn, data) {
         + '<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_popular" value="1" ' + (data.is_popular ? 'checked' : '') + ' class="rounded border-border"> Mis en avant</label>'
         + '</div>'
         + '<div class="flex justify-end gap-2 border-t border-border pt-3 mt-2">'
-        + '<button type="button" onclick="this.closest(\'.edit-panel\').remove()" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
+        + '<button type="button" onclick="closePanelAnim(this.closest(\'.edit-panel\'))" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Annuler</button>'
         + '<button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Enregistrer</button>'
         + '</div></form>';
     li.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 </script>
 
-{{-- Hidden template for new product form (kept at bottom) --}}
-<div id="product-form" class="hidden mt-6 rounded-2xl border border-border bg-card shadow-card p-5">
-    <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouveau produit</h2>
-    <form id="product-form-tag" action="/admin/products" method="POST" enctype="multipart/form-data" class="space-y-3">
-        @csrf
-        <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nom *</span>
-                <input type="text" name="name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slug</span>
-                <input type="text" name="slug" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description courte</span>
-            <input type="text" name="short_description" maxlength="300" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-        </label>
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description complète</span>
-            <textarea name="description" rows="4" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avantages (un par ligne)</span>
-            <textarea name="benefits" rows="4" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
-        </label>
-        <div class="grid gap-3 sm:grid-cols-3">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix (FCFA) *</span>
-                <input type="number" name="price" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prix promo</span>
-                <input type="number" name="promo_price" min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stock *</span>
-                <input type="number" name="stock" required min="0" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Catégorie</span>
-            <select name="category_id" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-                <option value="">— Aucune —</option>
-                @foreach($categories as $c)
-                    <option value="{{ $c->id }}">{{ $c->name }}</option>
-                @endforeach
-            </select>
-        </label>
-        <div class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images du produit (JPEG/PNG)</span>
-            <input type="file" name="product_images[]" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-        </div>
-        <div class="block">
-            <span class="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Images détails (JPEG/PNG)</span>
-            <input type="file" name="detail_product_images[]" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-        </div>
-        <div class="flex flex-wrap gap-4 pt-1">
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_active" value="1" checked class="rounded border-border"> Actif (visible)
-            </label>
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_popular" value="1" class="rounded border-border"> Mis en avant
-            </label>
-        </div>
-        <div class="flex justify-end gap-2 border-t border-border pt-4 mt-4">
-            <button type="button" onclick="document.getElementById('product-form').classList.add('hidden');" class="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted transition">Annuler</button>
-            <button type="submit" class="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Enregistrer</button>
-        </div>
-    </form>
-</div>
 @endsection

@@ -34,7 +34,9 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                     Commandes
                     @if($pendingCount > 0)
-                    <span class="ml-auto inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">{{ $pendingCount }}</span>
+                    <span id="pending-count-badge" class="ml-auto inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">{{ $pendingCount }}</span>
+                    @else
+                    <span id="pending-count-badge" class="ml-auto hidden inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">0</span>
                     @endif
                 </a>
                 @endcanDo
@@ -107,40 +109,105 @@
     </aside>
 
     {{-- Main content --}}
-    <section>
+    <section class="relative">
         <h1 class="mb-4 font-display text-2xl font-bold">@yield('title')</h1>
+
+        {{-- Page loader — uniquement sur le contenu --}}
+        <div id="page-loader" class="page-loader hidden">
+            <div style="position:relative">
+                <div class="loader-pulse"></div>
+                <div class="loader-ring"></div>
+            </div>
+            <div class="loader-text">Chargement</div>
+            <div class="loader-bar"></div>
+        </div>
+
         @yield('content')
     </section>
 </div>
 
+<script>
+/* ---- Global C+D+E animations ---- */
+window.accordionOpen = function(el, callback) {
+    if (!el) return;
+    el.style.display = '';
+    el.style.visibility = 'visible';
+    const targetH = el.scrollHeight;
+    el.style.maxHeight = '0';
+    el.style.opacity = '0';
+    el.style.overflow = 'hidden';
+    el.style.filter = 'blur(6px)';
+    el.style.transition = 'max-height 0.8s cubic-bezier(0.34,1.56,0.64,1), opacity 0.6s ease 0.1s, filter 0.7s ease';
+    requestAnimationFrame(() => {
+        el.style.maxHeight = targetH + 'px';
+        el.style.opacity = '1';
+        el.style.filter = 'blur(0px)';
+    });
+    setTimeout(() => {
+        el.style.maxHeight = '';
+        el.style.overflow = '';
+        if (callback) callback();
+    }, 820);
+};
+window.accordionClose = function(el, callback) {
+    if (!el) return;
+    const h = el.scrollHeight;
+    el.style.maxHeight = h + 'px';
+    el.style.overflow = 'hidden';
+    el.style.transition = 'max-height 0.6s ease-in, opacity 0.5s ease, filter 0.5s ease';
+    requestAnimationFrame(() => {
+        el.style.maxHeight = '0';
+        el.style.opacity = '0';
+        el.style.filter = 'blur(4px)';
+    });
+    setTimeout(() => {
+        el.style.visibility = 'hidden';
+        el.style.display = 'none';
+        el.style.filter = '';
+        if (callback) callback();
+    }, 620);
+};
+window.staggerChildren = function(el) {
+    if (!el) return;
+    const kids = el.querySelectorAll('div, h3, h4, p, pre, code, label, button, li, ul, img, span, table, tr, td, th, input, textarea, select');
+    kids.forEach((c, i) => {
+        c.style.opacity = '0';
+        c.style.transform = 'translateY(12px)';
+        c.style.transition = 'opacity 0.5s ease ' + (i * 0.06) + 's, transform 0.5s ease ' + (i * 0.06) + 's';
+    });
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            kids.forEach(c => {
+                c.style.opacity = '1';
+                c.style.transform = 'translateY(0)';
+            });
+        });
+    });
+};
+window.closePanelAnim = function(el) {
+    if (!el) return;
+    window.accordionClose(el, () => el.remove());
+};
+</script>
+
 {{-- Toast container --}}
 <div id="toast-container" class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2"></div>
 
-{{-- Page loader --}}
-<div id="page-loader" class="page-loader hidden">
-    <div style="position:relative">
-        <div class="loader-pulse"></div>
-        <div class="loader-ring"></div>
-    </div>
-    <div class="loader-text">Chargement</div>
-    <div class="loader-bar"></div>
-</div>
-
 <script>
-// Show loader on admin navigation
+// Show loader on admin navigation — loader couvre SEULEMENT la zone de contenu
 (function() {
     const loader = document.getElementById('page-loader');
     function showLoader() { loader.classList.remove('hidden'); }
     function hideLoader() { loader.classList.add('hidden'); }
 
-    // Intercept sidebar & nav links
-    document.querySelectorAll('aside a, .admin-nav a').forEach(a => {
+    // Intercept liens de navigation (sidebar + contenu) — loader s'affiche DANS le contenu
+    document.querySelectorAll('aside a, section a, .admin-nav a').forEach(a => {
         a.addEventListener('click', () => showLoader());
     });
 
     // Intercept form submits (except AJAX/inline)
     document.querySelectorAll('form').forEach(f => {
-        if (!f.closest('.detail-panel') && !f.closest('.edit-panel')) {
+        if (!f.closest('.detail-panel') && !f.closest('.edit-panel') && !f.closest('aside')) {
             f.addEventListener('submit', () => showLoader());
         }
     });
@@ -155,15 +222,17 @@
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    const isSuccess = type === 'success';
-    toast.className = 'toast-enter flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ' +
-        (isSuccess ? 'bg-success text-success-foreground' : 'bg-destructive text-destructive-foreground');
-    toast.innerHTML =
-        (isSuccess
-            ? '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-            : '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>'
-        )
-        + '<span>' + message + '</span>';
+    let colorClass = 'bg-success text-success-foreground';
+    let iconSvg = '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    if (type === 'error') {
+        colorClass = 'bg-destructive text-destructive-foreground';
+        iconSvg = '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+    } else if (type === 'warning') {
+        colorClass = 'bg-yellow-500 text-white';
+        iconSvg = '<svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>';
+    }
+    toast.className = 'toast-enter flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ' + colorClass;
+    toast.innerHTML = iconSvg + '<span>' + message + '</span>';
     container.appendChild(toast);
     setTimeout(() => {
         toast.classList.remove('toast-enter');
@@ -176,6 +245,49 @@ function showToast(message, type = 'success') {
 (function() {
     @if(session('success')) showToast({!! json_encode(session('success')) !!}, 'success'); @endif
     @if(session('error'))   showToast({!! json_encode(session('error')) !!}, 'error');   @endif
+    @if(session('warning')) showToast({!! json_encode(session('warning')) !!}, 'warning'); @endif
+})();
+
+/* ---- Temps réel : écoute nouvelles commandes ---- */
+(function() {
+    let lastCount = {{ $pendingCount ?? 0 }};
+    const badge = document.getElementById('pending-count-badge');
+
+    async function checkPendingOrders() {
+        try {
+            const res = await fetch('/admin/orders/pending-count', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const newCount = data.count || 0;
+
+            // Met à jour le badge dans la sidebar
+            if (badge) {
+                badge.textContent = newCount;
+                if (newCount > 0) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+
+            // Notification si nouvelle(s) commande(s)
+            if (newCount > lastCount) {
+                const diff = newCount - lastCount;
+                const msg = diff === 1 ? 'Nouvelle commande en attente !' : diff + ' nouvelles commandes en attente !';
+                showToast(msg, 'warning');
+            }
+            lastCount = newCount;
+        } catch (e) {
+            // Silencieux en cas d'erreur réseau
+        }
+    }
+
+    // Vérifie toutes les 15 secondes
+    setInterval(checkPendingOrders, 15000);
+    // Vérifie aussi immédiatement au chargement (après 2s)
+    setTimeout(checkPendingOrders, 2000);
 })();
 </script>
 

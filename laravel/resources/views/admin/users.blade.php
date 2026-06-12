@@ -47,6 +47,37 @@ $isSuper = auth()->user()->isSuperAdmin();
     </div>
 </div>
 
+{{-- Inline create panel --}}
+<div id="create-panel" class="mt-4 rounded-2xl border border-border bg-card p-6 shadow-card" style="display:none;">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 class="font-display text-lg font-bold">Nouveau compte</h2>
+        <button type="button" onclick="closeCreatePanel()" class="rounded-md p-1 hover:bg-muted transition">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <p class="mb-4 text-xs text-muted-foreground">Le système génère un identifiant unique et envoie un email d'invitation avec un lien pour définir le mot de passe.</p>
+    <form action="/admin/users" method="POST" class="max-w-md space-y-3">
+        @csrf
+        <label class="block">
+            <span class="mb-1 block text-xs font-medium">Nom complet (optionnel)</span>
+            <input type="text" name="full_name" placeholder="Ex. Jean Kouassi" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-medium">Email *</span>
+            <input type="email" name="email" required placeholder="jean@exemple.com" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-medium">Rôle initial</span>
+            <select name="role" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
+                @foreach($availableRoles as $role)
+                <option value="{{ $role }}">{{ ucfirst(str_replace('_', ' ', $role)) }}</option>
+                @endforeach
+            </select>
+        </label>
+        <button type="submit" class="mt-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Créer le compte & envoyer l'invitation</button>
+    </form>
+</div>
+
 @if(!$isSuper)
     <p class="mb-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
         Seul un <strong>Super Administrateur</strong> peut créer des comptes et attribuer des rôles.
@@ -111,6 +142,10 @@ $isSuper = auth()->user()->isSuperAdmin();
                             <button type="button" onclick="showUserDetails(this, '{{ $u->id }}')" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
+                            {{-- Journal d'activité --}}
+                            <a href="/admin/users/{{ $u->id }}/logs" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Journal d'activité">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+                            </a>
                             @if($isSuper && $u->id !== auth()->id())
                             {{-- Renvoyer l'invitation --}}
                             <form action="/admin/users/{{ $u->id }}/reset-password" method="POST" class="inline" onsubmit="return confirm('Renvoyer l\'email d\'invitation à {{ $u->email }} ?')">
@@ -136,66 +171,38 @@ $isSuper = auth()->user()->isSuperAdmin();
     </div>
 @endif
 
-{{-- Inline create panel --}}
-<div id="create-panel" class="hidden mt-4 rounded-2xl border border-border bg-card p-6 shadow-card">
-    <div class="mb-4 flex items-center justify-between">
-        <h2 class="font-display text-lg font-bold">Nouveau compte</h2>
-        <button type="button" onclick="closeCreatePanel()" class="rounded-md p-1 hover:bg-muted transition">
-            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
-    </div>
-    <p class="mb-4 text-xs text-muted-foreground">Le système génère un identifiant unique et envoie un email d'invitation avec un lien pour définir le mot de passe.</p>
-    <form action="/admin/users" method="POST" class="max-w-md space-y-3">
-        @csrf
-        <label class="block">
-            <span class="mb-1 block text-xs font-medium">Nom complet (optionnel)</span>
-            <input type="text" name="full_name" placeholder="Ex. Jean Kouassi" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-        </label>
-        <label class="block">
-            <span class="mb-1 block text-xs font-medium">Email *</span>
-            <input type="email" name="email" required placeholder="jean@exemple.com" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-        </label>
-        <label class="block">
-            <span class="mb-1 block text-xs font-medium">Rôle initial</span>
-            <select name="role" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-                @foreach($availableRoles as $role)
-                <option value="{{ $role }}">{{ ucfirst(str_replace('_', ' ', $role)) }}</option>
-                @endforeach
-            </select>
-        </label>
-        <button type="submit" class="mt-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">Créer le compte & envoyer l'invitation</button>
-    </form>
-</div>
-
 <script>
 let allLogs = [];
 let logActions = [];
 
 function openCreatePanel() {
-    document.getElementById('create-panel').classList.remove('hidden');
+    const panel = document.getElementById('create-panel');
+    accordionOpen(panel, () => staggerChildren(panel));
 }
 function closeCreatePanel() {
-    document.getElementById('create-panel').classList.add('hidden');
+    accordionClose(document.getElementById('create-panel'));
 }
 
 function removeDetailRows() {
-    document.querySelectorAll('.user-detail-row').forEach(el => el.remove());
+    document.querySelectorAll('.user-detail-row').forEach(el => closePanelAnim(el));
 }
 
 async function showUserDetails(btn, userId) {
     const tr = btn.closest('tr');
     const next = tr.nextElementSibling;
     if (next && next.classList.contains('user-detail-row')) {
-        next.remove();
+        closePanelAnim(next);
         return;
     }
     removeDetailRows();
 
     const colspan = {{ count($availableRoles) + 2 }};
     const detailTr = document.createElement('tr');
-    detailTr.className = 'user-detail-row border-t border-border';
+    detailTr.className = 'user-detail-row border-t border-border overflow-hidden';
+    detailTr.style.display = 'none';
     detailTr.innerHTML = '<td colspan="' + colspan + '" class="px-4 py-4 bg-muted/20"><div class="text-sm text-muted-foreground">Chargement…</div></td>';
     tr.after(detailTr);
+    accordionOpen(detailTr, () => staggerChildren(detailTr));
 
     try {
         const res = await fetch('/admin/users/' + userId + '/details');
@@ -206,28 +213,6 @@ async function showUserDetails(btn, userId) {
             rolesHtml += '<span class="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">' + r + '</span>';
         });
 
-        let logsHtml = '';
-        allLogs = data.logs;
-        logActions = data.log_actions;
-        const hasLogs = allLogs && allLogs.length;
-        if (hasLogs) {
-            logsHtml = '<h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Journal d\'activité</h4>'
-                + '<div class="overflow-hidden rounded-xl border border-border">'
-                + '<div class="hidden md:grid grid-cols-[140px_1fr_100px_120px] gap-3 border-b border-border bg-muted/40 px-3 py-2 text-xs font-semibold uppercase text-muted-foreground"><div>Date</div><div>Action</div><div>IP</div><div>Détails</div></div>'
-                + '<ul class="divide-y divide-border">';
-            allLogs.forEach(log => {
-                logsHtml += '<li class="grid grid-cols-1 gap-1 px-3 py-2 md:grid-cols-[140px_1fr_100px_120px] md:items-center">'
-                    + '<div class="text-xs text-muted-foreground">' + log.created_at + '</div>'
-                    + '<div class="text-xs font-semibold uppercase text-accent">' + log.action + '</div>'
-                    + '<div class="text-xs text-muted-foreground font-mono">' + (log.ip || '—') + '</div>'
-                    + '<div class="text-xs text-muted-foreground">' + (log.description || '—') + '</div>'
-                    + '</li>';
-            });
-            logsHtml += '</ul></div>';
-        } else {
-            logsHtml = '<p class="text-sm text-muted-foreground">Aucune activité enregistrée.</p>';
-        }
-
         detailTr.querySelector('td').innerHTML = '<div class="space-y-4">'
             + '<div class="rounded-xl border border-border bg-muted/30 p-4">'
             + '<div class="grid gap-2 text-sm">'
@@ -237,7 +222,10 @@ async function showUserDetails(btn, userId) {
             + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Créé le :</span><span>' + data.user.created_at + '</span></div>'
             + '<div class="flex gap-2"><span class="text-muted-foreground w-24">Rôles :</span><span class="flex flex-wrap gap-1">' + rolesHtml + '</span></div>'
             + '</div></div>'
-            + logsHtml
+            + '<a href="/admin/users/' + userId + '/logs" class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition">'
+            + '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>'
+            + 'Journal d\'activité'
+            + '</a>'
             + '</div>';
     } catch (e) {
         detailTr.querySelector('td').innerHTML = '<div class="text-sm text-destructive">Erreur de chargement</div>';

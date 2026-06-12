@@ -33,77 +33,9 @@
     @endcanDo
 </div>
 
-@if($testimonials->isEmpty())
-    <div class="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-        Aucun témoignage. Ajoutez le premier pour qu'il apparaisse sur le site.
-    </div>
-@else
-    <div class="grid gap-3">
-        @foreach($testimonials as $t)
-        <div class="testimonial-row flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-card">
-            @if($t->media_url)
-                @if($t->media_type === 'video')
-                    <video src="{{ $t->media_url }}" class="h-20 w-20 shrink-0 rounded-lg object-cover" muted></video>
-                @else
-                    <img src="{{ $t->media_url }}" alt="" class="h-20 w-20 shrink-0 rounded-lg object-cover">
-                @endif
-            @else
-                <div class="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-muted text-xs text-muted-foreground">
-                    Aucun média
-                </div>
-            @endif
-
-            <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                    <p class="font-semibold">{{ $t->author_name }}</p>
-                    @if($t->role)
-                        <span class="text-xs text-muted-foreground">· {{ $t->role }}</span>
-                    @endif
-                    <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $t->is_active ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground' }}">
-                        {{ $t->is_active ? 'Visible' : 'Masqué' }}
-                    </span>
-                    <span class="flex">
-                        @for($i = 1; $i <= 5; $i++)
-                            <svg class="h-3 w-3 {{ $i <= $t->rating ? 'fill-accent text-accent' : 'text-muted-foreground/30' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        @endfor
-                    </span>
-                </div>
-                <p class="mt-1 line-clamp-2 text-sm text-muted-foreground">{{ $t->content }}</p>
-            </div>
-
-            <div class="flex gap-1">
-                @canDo('edit_testimonials')
-                <button type="button" onclick="fillForm(this, {{ json_encode([
-                    'id' => $t->id,
-                    'author_name' => $t->author_name,
-                    'role' => $t->role ?? '',
-                    'content' => $t->content,
-                    'rating' => $t->rating,
-                    'media_url' => $t->media_url ?? '',
-                    'media_type' => $t->media_type,
-                    'is_active' => $t->is_active,
-                    'sort_order' => $t->sort_order,
-                ]) }})" class="rounded-md border border-border p-2 hover:bg-muted transition">
-                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                </button>
-                @endcanDo
-                @canDo('delete_testimonials')
-                <form action="/admin/testimonials/{{ $t->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ce témoignage ?')">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="rounded-md border border-border p-2 text-destructive hover:bg-destructive/10 transition">
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    </button>
-                </form>
-                @endcanDo
-            </div>
-        </div>
-        @endforeach
-    </div>
-@endif
-
 {{-- Inline form panel (moved by JS) --}}
 <div id="form-panel-container" class="mt-4"></div>
-<div id="testimonial-form-panel" class="hidden rounded-2xl border border-border bg-card p-6 shadow-card">
+<div id="testimonial-form-panel" class="rounded-2xl border border-border bg-card p-6 shadow-card" style="display:none;">
     <div class="mb-4 flex items-center justify-between">
         <h2 id="form-title" class="font-display text-lg font-bold">Nouveau témoignage</h2>
         <button type="button" onclick="closeForm()" class="rounded-md p-1 hover:bg-muted transition">
@@ -173,6 +105,74 @@
     </form>
 </div>
 
+@if($testimonials->isEmpty())
+    <div class="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+        Aucun témoignage. Ajoutez le premier pour qu'il apparaisse sur le site.
+    </div>
+@else
+    <div class="grid gap-3">
+        @foreach($testimonials as $t)
+        <div class="testimonial-row flex items-start gap-4 rounded-xl border border-border bg-card p-4 shadow-card">
+            @if($t->media_url)
+                @if($t->media_type === 'video')
+                    <video src="{{ $t->media_url }}" class="h-20 w-20 shrink-0 rounded-lg object-cover" muted></video>
+                @else
+                    <img src="{{ $t->media_url }}" alt="" class="h-20 w-20 shrink-0 rounded-lg object-cover">
+                @endif
+            @else
+                <div class="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-muted text-xs text-muted-foreground">
+                    Aucun média
+                </div>
+            @endif
+
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <p class="font-semibold">{{ $t->author_name }}</p>
+                    @if($t->role)
+                        <span class="text-xs text-muted-foreground">· {{ $t->role }}</span>
+                    @endif
+                    <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $t->is_active ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground' }}">
+                        {{ $t->is_active ? 'Visible' : 'Masqué' }}
+                    </span>
+                    <span class="flex">
+                        @for($i = 1; $i <= 5; $i++)
+                            <svg class="h-3 w-3 {{ $i <= $t->rating ? 'fill-accent text-accent' : 'text-muted-foreground/30' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        @endfor
+                    </span>
+                </div>
+                <p class="mt-1 line-clamp-2 text-sm text-muted-foreground">{{ $t->content }}</p>
+            </div>
+
+            <div class="flex gap-1">
+                @canDo('edit_testimonials')
+                <button type="button" onclick="fillForm(this, {{ json_encode([
+                    'id' => $t->id,
+                    'author_name' => $t->author_name,
+                    'role' => $t->role ?? '',
+                    'content' => $t->content,
+                    'rating' => $t->rating,
+                    'media_url' => $t->media_url ?? '',
+                    'media_type' => $t->media_type,
+                    'is_active' => $t->is_active,
+                    'sort_order' => $t->sort_order,
+                ]) }})" class="rounded-md border border-border p-2 hover:bg-muted transition">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </button>
+                @endcanDo
+                @canDo('delete_testimonials')
+                <form action="/admin/testimonials/{{ $t->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ce témoignage ?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="rounded-md border border-border p-2 text-destructive hover:bg-destructive/10 transition">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                </form>
+                @endcanDo
+            </div>
+        </div>
+        @endforeach
+    </div>
+@endif
+
 <script>
 function getPanel() {
     return document.getElementById('testimonial-form-panel');
@@ -185,7 +185,7 @@ function openForm() {
     closeForm();
     const panel = getPanel();
     getContainer().appendChild(panel);
-    panel.classList.remove('hidden');
+    accordionOpen(panel, () => staggerChildren(panel));
     document.getElementById('form-title').textContent = 'Nouveau témoignage';
     document.getElementById('testimonial-form').action = '/admin/testimonials';
     document.getElementById('method-override').value = '';
@@ -208,7 +208,7 @@ function fillForm(btn, data) {
     const card = btn.closest('.testimonial-row');
     const panel = getPanel();
     card.after(panel);
-    panel.classList.remove('hidden');
+    accordionOpen(panel, () => staggerChildren(panel));
 
     document.getElementById('form-title').textContent = 'Modifier le témoignage';
     document.getElementById('testimonial-form').action = '/admin/testimonials/' + data.id;
@@ -241,8 +241,9 @@ function fillForm(btn, data) {
 
 function closeForm() {
     const panel = getPanel();
-    panel.classList.add('hidden');
-    getContainer().appendChild(panel);
+    accordionClose(panel, () => {
+        getContainer().appendChild(panel);
+    });
 }
 
 function previewMedia(input) {

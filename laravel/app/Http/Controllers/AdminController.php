@@ -346,6 +346,13 @@ class AdminController extends Controller
         return view('admin.orders', compact('orders', 'statuses'));
     }
 
+    public function pendingOrdersCount()
+    {
+        return response()->json([
+            'count' => Order::pending()->count(),
+        ]);
+    }
+
     public function updateOrderStatus(Request $request, string $id)
     {
         $order = Order::findOrFail($id);
@@ -515,9 +522,23 @@ class AdminController extends Controller
         $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
 
         // Envoyer l'email d'invitation
-        Mail::to($user->email)->send(new UserInvitation($identifier, $resetUrl, $user->full_name ?? ''));
+        $mailError = null;
+        try {
+            Mail::to($user->email)->send(new UserInvitation($identifier, $resetUrl, $user->full_name ?? ''));
+        } catch (\Throwable $e) {
+            $mailError = $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Erreur envoi mail invitation', [
+                'error' => $e->getMessage(),
+                'email' => $user->email,
+                'user_id' => $user->id,
+            ]);
+        }
 
-        $this->logActivity('create_user', "Création du compte staff {$identifier}", null, null, ['role' => $validated['role']]);
+        $this->logActivity('create_user', "Création du compte staff {$identifier}", null, null, ['role' => $validated['role'], 'mail_error' => $mailError]);
+
+        if ($mailError) {
+            return redirect('/admin/users')->with('warning', "Compte créé, mais l'email n'a pas pu être envoyé. Vérifiez votre configuration SMTP ou vos logs.");
+        }
 
         return redirect('/admin/users')->with('success', "Compte staff créé. Un email d'invitation a été envoyé à {$validated['email']}.");
     }
@@ -582,9 +603,23 @@ class AdminController extends Controller
         $token = app('auth.password.broker')->createToken($user);
         $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $user->email], false));
 
-        Mail::to($user->email)->send(new UserInvitation($user->identifier, $resetUrl, $user->full_name ?? ''));
+        $mailError = null;
+        try {
+            Mail::to($user->email)->send(new UserInvitation($user->identifier, $resetUrl, $user->full_name ?? ''));
+        } catch (\Throwable $e) {
+            $mailError = $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Erreur renvoi mail invitation', [
+                'error' => $e->getMessage(),
+                'email' => $user->email,
+                'user_id' => $user->id,
+            ]);
+        }
 
-        $this->logActivity('reset_password', "Demande de réinitialisation du mot de passe pour {$user->identifier}", null, null);
+        $this->logActivity('reset_password', "Demande de réinitialisation du mot de passe pour {$user->identifier}", null, null, ['mail_error' => $mailError]);
+
+        if ($mailError) {
+            return redirect('/admin/users')->with('warning', "L'email n'a pas pu être envoyé. Vérifiez votre configuration SMTP ou vos logs.");
+        }
 
         return redirect('/admin/users')->with('success', "Email de réinitialisation envoyé à {$user->email}.");
     }
@@ -617,6 +652,45 @@ class AdminController extends Controller
             ]),
             'log_actions' => ActivityLog::where('user_id', $user->id)->distinct()->pluck('action'),
         ]);
+    }
+
+    public function userLogs(Request $request, string $id)
+    {
+        $user = User::with('userRoles')->findOrFail($id);
+
+        $query = ActivityLog::with('user')->where('user_id', $user->id)->orderByDesc('created_at');
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where(function ($sub) use ($q) {
+                $sub->where('action', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%")
+                    ->orWhere('model_type', 'like', "%{$q}%");
+            });
+        }
+
+        $logs = $query->paginate(50)->withQueryString();
+
+        $allActions = collect([
+            'stock_adjust', 'create_product', 'update_product', 'delete_product', 'toggle_product', 'set_promo',
+            'create_category', 'update_category', 'delete_category',
+            'create_commune', 'update_commune', 'delete_commune',
+            'update_order_status', 'delete_order',
+            'create_testimonial', 'update_testimonial', 'delete_testimonial',
+            'update_banner',
+            'create_user', 'delete_user', 'assign_role', 'remove_role', 'reset_password',
+            'update_profile', 'update_password',
+            'create_role', 'update_role', 'delete_role',
+            'login', 'logout',
+            'unauthorized_access', 'validation_error', 'error',
+        ]);
+        $loggedActions = ActivityLog::where('user_id', $user->id)->distinct()->orderBy('action')->pluck('action');
+        $actions = $allActions->merge($loggedActions)->unique()->sort()->values();
+
+        return view('admin.user-logs', compact('logs', 'actions', 'user'));
     }
 
     public function logs(Request $request)
@@ -660,6 +734,7 @@ class AdminController extends Controller
             'create_user', 'delete_user', 'assign_role', 'remove_role', 'reset_password',
             'update_profile', 'update_password',
             'create_role', 'update_role', 'delete_role',
+            'login', 'logout',
             'unauthorized_access', 'validation_error', 'error',
         ]);
         $loggedActions = ActivityLog::distinct()->orderBy('action')->pluck('action');

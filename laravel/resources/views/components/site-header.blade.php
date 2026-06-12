@@ -23,11 +23,9 @@
             </a>
             <a href="/panier" class="relative grid h-10 w-10 place-items-center rounded-md text-foreground/80 transition hover:bg-muted" aria-label="Panier">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                @if(session('cart_count', 0) > 0)
-                    <span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-foreground">
-                        {{ session('cart_count') }}
-                    </span>
-                @endif
+                <span id="cart-badge" class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-foreground transition {{ session('cart_count', 0) > 0 ? '' : 'hidden' }}">
+                    {{ session('cart_count') }}
+                </span>
             </a>
             @auth
                 <a href="/admin" class="hidden h-10 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground/80 transition hover:border-accent hover:text-accent sm:inline-flex" aria-label="Dashboard admin">

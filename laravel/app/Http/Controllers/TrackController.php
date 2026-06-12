@@ -25,4 +25,10 @@ class TrackController extends Controller
 
         return view('track', compact('orders'));
     }
+
+    public function show(Order $order)
+    {
+        $order->load('items');
+        return view('track-show', compact('order'));
+    }
 }

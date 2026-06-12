@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
@@ -28,6 +29,12 @@ class AuthController extends Controller
 
         if (Auth::attempt(['email' => $email, 'password' => $request->password])) {
             $request->session()->regenerate();
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'login',
+                'description' => 'Connexion de ' . Auth::user()->identifier,
+                'ip_address' => $request->ip(),
+            ]);
             return redirect()->intended('/admin');
         }
 
@@ -36,6 +43,15 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        if ($user) {
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'logout',
+                'description' => 'Déconnexion de ' . $user->identifier,
+                'ip_address' => $request->ip(),
+            ]);
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

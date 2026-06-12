@@ -50,6 +50,12 @@
                             <span class="text-muted-foreground">{{ $order->commune_name }} — Livraison {{ number_format($order->delivery_fee, 0, ',', ' ') }} FCFA</span>
                             <span class="font-bold text-primary">{{ number_format($order->total, 0, ',', ' ') }} FCFA</span>
                         </div>
+                        <div class="mt-3 flex justify-end">
+                            <a href="/suivi/{{ $order->id }}" class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:scale-[1.02]">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                Voir les détails
+                            </a>
+                        </div>
                     </li>
                 @endforeach
             </ul>

@@ -23,6 +23,14 @@ class CartController extends Controller
 
         CartService::add($request->product_id, $request->quantity);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Produit ajouté au panier',
+                'count' => CartService::count(),
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Produit ajouté au panier');
     }
 

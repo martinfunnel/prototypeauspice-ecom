@@ -37,12 +37,12 @@
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" id="role-search" placeholder="Filtrer rôles…" class="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:border-accent">
             </div>
-            <button type="button" id="btn-create-role" onclick="document.getElementById('role-create-form').classList.toggle('hidden'); this.classList.add('hidden');" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90">
+            <button type="button" id="btn-create-role" onclick="const form=document.getElementById('role-create-form'); if(form.style.display==='none'||form.style.display===''){accordionOpen(form,()=>staggerChildren(form));this.classList.add('hidden');}else{accordionClose(form);this.classList.remove('hidden');}" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90">
                 + Créer un rôle
             </button>
         </div>
         {{-- Create form (hidden by default) --}}
-        <div id="role-create-form" class="hidden bg-card rounded-xl shadow-card border border-border p-6 mb-8">
+        <div id="role-create-form" class="bg-card rounded-xl shadow-card border border-border p-6 mb-8" style="display:none;">
             <h2 class="font-display text-lg font-bold text-foreground mb-4">Nouveau rôle</h2>
             <form action="/admin/roles" method="POST" class="space-y-4">
                 @csrf
@@ -67,7 +67,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground">Créer le rôle</button>
-                    <button type="button" onclick="document.getElementById('role-create-form').classList.add('hidden'); document.getElementById('btn-create-role').classList.remove('hidden');" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>
+                    <button type="button" onclick="accordionClose(document.getElementById('role-create-form')); document.getElementById('btn-create-role').classList.remove('hidden');" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>
                 </div>
             </form>
         </div>
@@ -90,20 +90,20 @@
                             <td class="p-3 text-foreground">{{ $r->name }}</td>
                             <td class="p-3 text-muted-foreground">{{ $r->permissions->count() }} permission(s)</td>
                             <td class="p-3 flex gap-1">
-                                <button type="button" onclick="showRoleDetail(this, {{ json_encode([
+                                <button type="button" onclick='showRoleDetail(this, {!! json_encode([
                                     'id' => $r->id,
                                     'key' => $r->key,
                                     'name' => $r->name,
                                     'permissions' => $r->permissions->map(fn($p) => ['group' => $p->group, 'name' => $p->name])->groupBy('group')->toArray(),
-                                ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
+                                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!})' class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
                                     <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                 </button>
-                                <button type="button" onclick="openEditRoleInline(this, {{ json_encode([
+                                <button type="button" onclick='openEditRoleInline(this, {!! json_encode([
                                     'id' => $r->id,
                                     'key' => $r->key,
                                     'name' => $r->name,
                                     'permission_ids' => $r->permissions->pluck('id')->values()->toArray(),
-                                ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Modifier">
+                                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!})' class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Modifier">
                                     <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                 </button>
                                 <form action="/admin/roles/{{ $r->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer &quot;{{ $r->name }}&quot; ?')">
@@ -126,11 +126,11 @@ function openEditRoleInline(btn, data) {
     const tr = btn.closest('tr');
     let panel = tr.nextElementSibling;
     if (panel && panel.classList.contains('edit-panel')) {
-        panel.remove();
+        closePanelAnim(panel);
         return;
     }
-    document.querySelectorAll('.edit-panel').forEach(el => el.remove());
-    document.querySelectorAll('.detail-panel').forEach(el => el.remove());
+    document.querySelectorAll('.edit-panel').forEach(el => closePanelAnim(el));
+    document.querySelectorAll('.detail-panel').forEach(el => closePanelAnim(el));
 
     const checkedIds = new Set(data.permission_ids.map(Number));
 
@@ -150,7 +150,8 @@ function openEditRoleInline(btn, data) {
     permsHtml += '</div>';
 
     const wrapper = document.createElement('tr');
-    wrapper.className = 'edit-panel';
+    wrapper.className = 'edit-panel overflow-hidden';
+    wrapper.style.display = 'none';
     wrapper.innerHTML = '<td colspan="4" class="px-4 py-4 border-t border-border bg-muted/20">'
         + '<form action="/admin/roles/' + data.id + '" method="POST" class="space-y-4">'
         + '<input type="hidden" name="_token" value="{{ csrf_token() }}">'
@@ -166,21 +167,22 @@ function openEditRoleInline(btn, data) {
         + '<div><span class="block text-sm font-semibold text-foreground mb-2">Permissions</span>' + permsHtml + '</div>'
         + '<div class="flex gap-2">'
         + '<button type="submit" class="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground">Mettre à jour</button>'
-        + '<button type="button" onclick="this.closest(\\'.edit-panel\\').remove()" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>'
+        + '<button type="button" onclick="closePanelAnim(this.closest(\'.edit-panel\'))" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>'
         + '</div>'
         + '</form>'
         + '</td>';
     tr.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 
 function showRoleDetail(btn, data) {
     const tr = btn.closest('tr');
     let panel = tr.nextElementSibling;
     if (panel && panel.classList.contains('detail-panel')) {
-        panel.remove();
+        closePanelAnim(panel);
         return;
     }
-    document.querySelectorAll('.detail-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel').forEach(el => closePanelAnim(el));
 
     let permsHtml = '';
     if (data.permissions && Object.keys(data.permissions).length) {
@@ -200,7 +202,8 @@ function showRoleDetail(btn, data) {
     }
 
     const wrapper = document.createElement('tr');
-    wrapper.className = 'detail-panel';
+    wrapper.className = 'detail-panel overflow-hidden';
+    wrapper.style.display = 'none';
     wrapper.innerHTML = '<td colspan="4" class="px-4 py-4 border-t border-border bg-muted/20">'
         + '<div class="flex items-center gap-2 mb-2">'
         + '<span class="font-display text-sm font-bold">' + data.name + '</span>'
@@ -209,6 +212,7 @@ function showRoleDetail(btn, data) {
         + permsHtml
         + '</td>';
     tr.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 
 /* ---- Live filter ---- */

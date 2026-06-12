@@ -41,7 +41,7 @@ $totalLogs = $logs->total();
     <select id="live-user" class="rounded-lg border border-border bg-background px-3 py-2 text-sm">
         <option value="">Tous les utilisateurs</option>
         @foreach($users as $u)
-            <option value="{{ $u->id }}">{{ $u->name ?? $u->identifier }}</option>
+            <option value="{{ $u->id }}">{{ $u->identifier }} ({{ $u->name }})</option>
         @endforeach
     </select>
     <button type="button" id="live-reset" onclick="resetFilters()" class="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition">Réinitialiser</button>
@@ -101,7 +101,8 @@ $totalLogs = $logs->total();
                         'model_id' => $log->model_id,
                         'ip' => $log->ip_address,
                         'metadata' => $metadata,
-                        'user_name' => $log->user?->name ?? $log->user?->identifier ?? 'Système',
+                        'user_name' => $log->user?->identifier ?? 'Système',
+                        'user_full_name' => $log->user?->name ?? '',
                         'user_id' => $log->user_id,
                         'created_at' => $log->created_at->format('d/m/Y H:i:s'),
                     ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir détails">
@@ -110,7 +111,8 @@ $totalLogs = $logs->total();
                 </div>
                 <div class="text-right text-xs">
                     @if($log->user)
-                        <span class="font-medium">{{ $log->user->name ?? $log->user->identifier }}</span>
+                        <span class="font-medium">{{ $log->user->identifier }}</span>
+                        <span class="text-muted-foreground"> — {{ $log->user->name ?? 'Sans nom' }}</span>
                     @else
                         <span class="text-muted-foreground">Système</span>
                     @endif
@@ -127,17 +129,18 @@ function showLogDetail(btn, data) {
     const li = btn.closest('li');
     let panel = li.nextElementSibling;
     if (panel && panel.classList.contains('detail-panel')) {
-        panel.remove();
+        closePanelAnim(panel);
         return;
     }
-    document.querySelectorAll('.detail-panel').forEach(el => el.remove());
+    document.querySelectorAll('.detail-panel').forEach(el => closePanelAnim(el));
 
     const wrapper = document.createElement('li');
-    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';
+    wrapper.className = 'detail-panel col-span-full px-4 py-4 border-t border-border bg-muted/20 overflow-hidden';
+    wrapper.style.display = 'none';
 
     let html = '<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">';
     html += '<div><span class="text-muted-foreground text-xs uppercase">Action</span><p class="font-semibold">' + data.action + '</p></div>';
-    html += '<div><span class="text-muted-foreground text-xs uppercase">Utilisateur</span><p class="font-semibold">' + data.user_name + '</p></div>';
+    html += '<div><span class="text-muted-foreground text-xs uppercase">Utilisateur</span><p class="font-semibold">' + data.user_name + (data.user_full_name ? ' <span class="text-muted-foreground font-normal">— ' + escapeHtml(data.user_full_name) + '</span>' : '') + '</p></div>';
     html += '<div><span class="text-muted-foreground text-xs uppercase">Date</span><p class="font-semibold">' + data.created_at + '</p></div>';
     html += '<div><span class="text-muted-foreground text-xs uppercase">IP</span><p class="font-mono font-semibold">' + (data.ip ?? '—') + '</p></div>';
     html += '</div>';
@@ -154,6 +157,7 @@ function showLogDetail(btn, data) {
 
     wrapper.innerHTML = html;
     li.after(wrapper);
+    accordionOpen(wrapper, () => staggerChildren(wrapper));
 }
 
 function escapeHtml(text) {
@@ -229,7 +233,8 @@ function startPolling() {
 function buildLogRowHtml(log) {
     const isError = errorActions.includes(log.action);
     const metadata = log.metadata ? JSON.stringify(log.metadata, null, 2) : null;
-    const userName = log.user?.name ?? log.user?.identifier ?? 'Système';
+    const userName = log.user?.identifier ?? 'Système';
+    const userFullName = log.user?.name ?? '';
     const createdAt = log.created_at;
     const timeLabel = createdAt ? createdAt.substring(0, 16).replace('T', ' ') : '';
 
@@ -247,6 +252,7 @@ function buildLogRowHtml(log) {
         ip: log.ip_address,
         metadata: metadata,
         user_name: userName,
+        user_full_name: userFullName,
         user_id: log.user_id,
         created_at: log.created_at ? log.created_at.replace('T', ' ').substring(0, 19) : ''
     });
@@ -267,7 +273,7 @@ function buildLogRowHtml(log) {
         + '<button type="button" onclick="showLogDetail(this, ' + detailData.replace(/"/g, '&quot;') + ')" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir détails">'
         + '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
         + '</button></div>'
-        + '<div class="text-right text-xs"><span class="font-medium">' + escapeHtml(userName) + '</span></div>'
+        + '<div class="text-right text-xs"><span class="font-medium">' + escapeHtml(userName) + '</span>' + (userFullName ? ' <span class="text-muted-foreground">— ' + escapeHtml(userFullName) + '</span>' : '') + '</div>'
         + '</li>';
 }
 

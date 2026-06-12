@@ -142,7 +142,24 @@ $pendingRevenue = $orders->where('status', 'pending')->sum('total');
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" onclick="window.print()" class="flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition">
+                            <button type="button" onclick="printInvoice({{ json_encode([
+                                'order_number' => $o->order_number,
+                                'created_at' => $o->created_at->format('d/m/Y H:i'),
+                                'customer_name' => $o->customer_name,
+                                'customer_phone' => $o->customer_phone,
+                                'address' => $o->address,
+                                'commune_name' => $o->commune_name,
+                                'notes' => $o->notes,
+                                'subtotal' => number_format($o->subtotal, 0, ',', ' '),
+                                'delivery_fee' => number_format($o->delivery_fee, 0, ',', ' '),
+                                'total' => number_format($o->total, 0, ',', ' '),
+                                'items' => $o->items->map(fn($item) => [
+                                    'name' => $item->product_name,
+                                    'qty' => $item->quantity,
+                                    'price' => number_format($item->price, 0, ',', ' '),
+                                    'subtotal' => number_format($item->subtotal, 0, ',', ' '),
+                                ])->toArray(),
+                            ]) }})" class="flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted transition">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
                                 Imprimer
                             </button>

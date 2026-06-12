@@ -299,5 +299,39 @@
     communeSelect.addEventListener('change', updateRecap);
     updateRecap();
 })();
+
+/* ---- AJAX ajout panier ---- */
+document.querySelector('form[action="/panier/ajouter"]').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+    try {
+        const res = await fetch('/panier/ajouter', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: formData,
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Produit ajouté au panier', 'success');
+            const badge = document.getElementById('cart-badge');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.classList.remove('hidden');
+            }
+        } else {
+            showToast(data.message || 'Erreur', 'error');
+        }
+    } catch (err) {
+        showToast('Erreur réseau', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
 </script>
 @endsection
