@@ -88,15 +88,27 @@
                 </thead>
                 <tbody>
                     @foreach($roles as $r)
-                        <tr class="border-b border-border hover:bg-muted transition">
+                        <tr class="border-b border-border hover:bg-muted transition role-row">
                             <td class="p-3 font-medium text-foreground">{{ $r->key }}</td>
                             <td class="p-3 text-foreground">{{ $r->name }}</td>
                             <td class="p-3 text-muted-foreground">{{ $r->permissions->count() }} permission(s)</td>
-                            <td class="p-3 flex gap-2">
-                                <a href="/admin/roles/{{ $r->id }}/edit" class="text-sm text-accent hover:underline">Modifier</a>
-                                <form action="/admin/roles/{{ $r->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ?')">
+                            <td class="p-3 flex gap-1">
+                                <button type="button" onclick="showRoleDetail(this, {{ json_encode([
+                                    'id' => $r->id,
+                                    'key' => $r->key,
+                                    'name' => $r->name,
+                                    'permissions' => $r->permissions->map(fn($p) => ['group' => $p->group, 'name' => $p->name])->groupBy('group')->toArray(),
+                                ]) }})" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Voir">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                                <a href="/admin/roles/{{ $r->id }}/edit" class="grid h-9 w-9 place-items-center rounded-lg text-foreground/70 hover:bg-muted transition" title="Modifier">
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                </a>
+                                <form action="/admin/roles/{{ $r->id }}" method="POST" class="inline" onsubmit="return confirm('Supprimer &quot;{{ $r->name }}&quot; ?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-destructive hover:opacity-70 text-xs">Supprimer</button>
+                                    <button type="submit" class="grid h-9 w-9 place-items-center rounded-lg text-destructive hover:bg-destructive/10 transition" title="Supprimer">
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -104,4 +116,44 @@
                 </tbody>
             </table>
         </div>
+
+<script>
+function showRoleDetail(btn, data) {
+    const tr = btn.closest('tr');
+    let panel = tr.nextElementSibling;
+    if (panel && panel.classList.contains('detail-panel')) {
+        panel.remove();
+        return;
+    }
+    document.querySelectorAll('.detail-panel').forEach(el => el.remove());
+
+    let permsHtml = '';
+    if (data.permissions && Object.keys(data.permissions).length) {
+        permsHtml += '<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-2">';
+        for (const [group, perms] of Object.entries(data.permissions)) {
+            permsHtml += '<div class="rounded-lg border border-border bg-muted/30 p-3">';
+            permsHtml += '<h4 class="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">' + group + '</h4>';
+            permsHtml += '<ul class="space-y-1">';
+            perms.forEach(p => {
+                permsHtml += '<li class="text-sm text-muted-foreground flex items-center gap-1"><svg class="h-3 w-3 text-accent shrink-0" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' + p.name + '</li>';
+            });
+            permsHtml += '</ul></div>';
+        }
+        permsHtml += '</div>';
+    } else {
+        permsHtml = '<p class="text-sm text-muted-foreground mt-2">Aucune permission assignée.</p>';
+    }
+
+    const wrapper = document.createElement('tr');
+    wrapper.className = 'detail-panel';
+    wrapper.innerHTML = '<td colspan="4" class="px-4 py-4 border-t border-border bg-muted/20">'
+        + '<div class="flex items-center gap-2 mb-2">'
+        + '<span class="font-display text-sm font-bold">' + data.name + '</span>'
+        + '<span class="text-xs text-muted-foreground font-mono">' + data.key + '</span>'
+        + '</div>'
+        + permsHtml
+        + '</td>';
+    tr.after(wrapper);
+}
+</script>
 @endsection
