@@ -3,10 +3,6 @@
 @section('title', 'Mon profil')
 
 @section('content')
-@if(session('success'))
-    <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
-@endif
-
 <div class="grid gap-6 lg:grid-cols-[1fr_1fr]">
     {{-- Informations personnelles --}}
     <div class="rounded-2xl border border-border bg-card p-6 shadow-card">

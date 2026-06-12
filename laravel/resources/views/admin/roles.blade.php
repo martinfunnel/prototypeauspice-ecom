@@ -5,13 +5,6 @@
 @section('content')
 
 
-        @if(session('success'))
-            <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg mb-6">{{ session('error') }}</div>
-        @endif
-
         {{-- Stats cards --}}
         @php
             $totalRoles = $roles->count();

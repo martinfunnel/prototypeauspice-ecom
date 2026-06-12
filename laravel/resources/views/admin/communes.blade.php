@@ -3,10 +3,6 @@
 @section('title', 'Communes')
 
 @section('content')
-@if(session('success'))
-    <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
-@endif
-
 {{-- Stats cards --}}
 <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
     <div class="rounded-2xl border border-border bg-card p-4 shadow-card">

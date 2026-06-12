@@ -3,10 +3,6 @@
 @section('title', 'Tableau de bord')
 
 @section('content')
-@if(session('success'))
-    <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
-@endif
-
 @php
 $statCards = [
     ['label' => 'CA total', 'value' => number_format($stats['total_revenue'], 0, ',', ' ') . ' FCFA', 'tone' => 'success', 'icon' => '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'],

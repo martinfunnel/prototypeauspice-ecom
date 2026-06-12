@@ -40,10 +40,6 @@ $pendingRevenue = $orders->where('status', 'pending')->sum('total');
     </div>
 </div>
 
-@if(session('success'))
-    <div class="bg-success/10 border border-success/20 text-success p-4 rounded-lg mb-6">{{ session('success') }}</div>
-@endif
-
 {{-- Barre recherche + filtre --}}
 <form action="/admin/orders" method="GET" class="mb-4 flex flex-wrap items-center gap-2">
     <div class="relative flex-1 min-w-[200px]">
