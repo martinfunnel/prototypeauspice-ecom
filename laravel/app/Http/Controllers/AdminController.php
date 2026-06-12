@@ -72,7 +72,8 @@ class AdminController extends Controller
         $data = $this->prepareProductData($request, $validated);
         $data['slug'] = $data['slug'] ?: \Illuminate\Support\Str::slug($data['name']);
 
-        Product::create($data);
+        $product = Product::create($data);
+        $this->logActivity('create_product', "Création du produit {$product->name}", Product::class, $product->id);
         return redirect('/admin/products')->with('success', 'Produit créé');
     }
 
@@ -97,6 +98,7 @@ class AdminController extends Controller
         $data['slug'] = $data['slug'] ?: \Illuminate\Support\Str::slug($data['name']);
 
         $product->update($data);
+        $this->logActivity('update_product', "Mise à jour du produit {$product->name}", Product::class, $product->id);
         return redirect('/admin/products')->with('success', 'Produit mis à jour');
     }
 
@@ -157,7 +159,9 @@ class AdminController extends Controller
 
     public function destroyProduct(string $id)
     {
-        Product::findOrFail($id)->delete();
+        $product = Product::findOrFail($id);
+        $this->logActivity('delete_product', "Suppression du produit {$product->name}", Product::class, $product->id);
+        $product->delete();
         return redirect('/admin/products')->with('success', 'Produit supprimé');
     }
 
@@ -165,6 +169,7 @@ class AdminController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->update(['is_active' => !$product->is_active]);
+        $this->logActivity('toggle_product', ($product->is_active ? 'Activation' : 'Désactivation') . " du produit {$product->name}", Product::class, $product->id);
         return redirect('/admin/products')->with('success', $product->is_active ? 'Produit activé' : 'Produit désactivé');
     }
 
@@ -192,6 +197,7 @@ class AdminController extends Controller
             'promo_price' => $validated['promo_price'] ?: null,
             'promo_ends_at' => $validated['promo_ends_at'] ?: null,
         ]);
+        $this->logActivity('set_promo', "Mise à jour promo du produit {$product->name}", Product::class, $product->id);
         return redirect('/admin/products')->with('success', 'Promotion mise à jour');
     }
 
@@ -222,7 +228,8 @@ class AdminController extends Controller
             $data['image_url'] = $this->uploadSingleImage($request->file('image'));
         }
 
-        Category::create($data);
+        $category = Category::create($data);
+        $this->logActivity('create_category', "Création de la catégorie {$category->name}", Category::class, $category->id);
         return redirect('/admin/categories')->with('success', 'Catégorie créée');
     }
 
@@ -250,6 +257,7 @@ class AdminController extends Controller
         }
 
         $category->update($data);
+        $this->logActivity('update_category', "Mise à jour de la catégorie {$category->name}", Category::class, $category->id);
         return redirect('/admin/categories')->with('success', 'Catégorie mise à jour');
     }
 
@@ -261,7 +269,9 @@ class AdminController extends Controller
 
     public function destroyCategory(string $id)
     {
-        Category::findOrFail($id)->delete();
+        $category = Category::findOrFail($id);
+        $this->logActivity('delete_category', "Suppression de la catégorie {$category->name}", Category::class, $category->id);
+        $category->delete();
         return redirect('/admin/categories')->with('success', 'Catégorie supprimée');
     }
 
@@ -273,19 +283,24 @@ class AdminController extends Controller
 
     public function storeCommune(Request $request)
     {
-        Commune::create($request->all());
+        $commune = Commune::create($request->all());
+        $this->logActivity('create_commune', "Création de la commune {$commune->name}", Commune::class, $commune->id);
         return redirect('/admin/communes')->with('success', 'Commune créée');
     }
 
     public function updateCommune(Request $request, string $id)
     {
-        Commune::findOrFail($id)->update($request->all());
+        $commune = Commune::findOrFail($id);
+        $commune->update($request->all());
+        $this->logActivity('update_commune', "Mise à jour de la commune {$commune->name}", Commune::class, $commune->id);
         return redirect('/admin/communes')->with('success', 'Commune mise à jour');
     }
 
     public function destroyCommune(string $id)
     {
-        Commune::findOrFail($id)->delete();
+        $commune = Commune::findOrFail($id);
+        $this->logActivity('delete_commune', "Suppression de la commune {$commune->name}", Commune::class, $commune->id);
+        $commune->delete();
         return redirect('/admin/communes')->with('success', 'Commune supprimée');
     }
 
@@ -323,6 +338,7 @@ class AdminController extends Controller
     {
         $order = Order::findOrFail($id);
         $order->update(['status' => $request->status]);
+        $this->logActivity('update_order_status', "Changement statut commande #{$order->order_number} -> {$request->status}", Order::class, $order->id);
         return redirect('/admin/orders')->with('success', 'Statut mis à jour');
     }
 
@@ -368,7 +384,8 @@ class AdminController extends Controller
 
     public function storeTestimonial(Request $request)
     {
-        Testimonial::create($this->prepareTestimonialData($request));
+        $testimonial = Testimonial::create($this->prepareTestimonialData($request));
+        $this->logActivity('create_testimonial', "Création du témoignage de {$testimonial->author_name}", Testimonial::class, $testimonial->id);
         return redirect('/admin/testimonials')->with('success', 'Témoignage créé');
     }
 
@@ -376,12 +393,15 @@ class AdminController extends Controller
     {
         $t = Testimonial::findOrFail($id);
         $t->update($this->prepareTestimonialData($request));
+        $this->logActivity('update_testimonial', "Mise à jour du témoignage de {$t->author_name}", Testimonial::class, $t->id);
         return redirect('/admin/testimonials')->with('success', 'Témoignage mis à jour');
     }
 
     public function destroyTestimonial(string $id)
     {
-        Testimonial::findOrFail($id)->delete();
+        $t = Testimonial::findOrFail($id);
+        $this->logActivity('delete_testimonial', "Suppression du témoignage de {$t->author_name}", Testimonial::class, $t->id);
+        $t->delete();
         return redirect('/admin/testimonials')->with('success', 'Témoignage supprimé');
     }
 
@@ -417,13 +437,15 @@ class AdminController extends Controller
         }
 
         PromoBanner::updateOrCreate(['key' => 'catalogue'], $data);
-
+        $this->logActivity('update_banner', "Mise à jour de la bannière catalogue");
         return redirect('/admin/banners')->with('success', 'Bannière enregistrée');
     }
 
     public function destroyOrder(string $id)
     {
-        Order::findOrFail($id)->delete();
+        $order = Order::findOrFail($id);
+        $this->logActivity('delete_order', "Suppression de la commande #{$order->order_number}", Order::class, $order->id);
+        $order->delete();
         return redirect('/admin/orders')->with('success', 'Commande supprimée');
     }
 
@@ -603,7 +625,19 @@ class AdminController extends Controller
         }
 
         $logs = $query->paginate(50)->withQueryString();
-        $actions = ActivityLog::distinct()->orderBy('action')->pluck('action');
+        $allActions = collect([
+            'stock_adjust', 'create_product', 'update_product', 'delete_product', 'toggle_product', 'set_promo',
+            'create_category', 'update_category', 'delete_category',
+            'create_commune', 'update_commune', 'delete_commune',
+            'update_order_status', 'delete_order',
+            'create_testimonial', 'update_testimonial', 'delete_testimonial',
+            'update_banner',
+            'create_user', 'delete_user', 'assign_role', 'remove_role', 'reset_password',
+            'update_profile', 'update_password',
+            'create_role', 'update_role', 'delete_role',
+        ]);
+        $loggedActions = ActivityLog::distinct()->orderBy('action')->pluck('action');
+        $actions = $allActions->merge($loggedActions)->unique()->sort()->values();
         $users = User::orderBy('name')->get(['id', 'name', 'identifier']);
 
         return view('admin.logs', compact('logs', 'actions', 'users'));
@@ -640,7 +674,7 @@ class AdminController extends Controller
         ]);
 
         $user->update($validated);
-
+        $this->logActivity('update_profile', "Mise à jour du profil");
         return redirect('/admin/profil')->with('success', 'Profil mis à jour');
     }
 
@@ -658,7 +692,7 @@ class AdminController extends Controller
         }
 
         $user->update(['password' => Hash::make($request->password)]);
-
+        $this->logActivity('update_password', "Changement de mot de passe");
         return redirect('/admin/profil')->with('success', 'Mot de passe changé avec succès');
     }
 
@@ -687,7 +721,7 @@ class AdminController extends Controller
         if (!empty($validated['permission_ids'])) {
             $role->permissions()->sync($validated['permission_ids']);
         }
-
+        $this->logActivity('create_role', "Création du rôle {$role->name}");
         return redirect('/admin/roles')->with('success', 'Rôle créé');
     }
 
@@ -710,7 +744,7 @@ class AdminController extends Controller
 
         $role->update(['name' => $validated['name']]);
         $role->permissions()->sync($validated['permission_ids'] ?? []);
-
+        $this->logActivity('update_role', "Mise à jour du rôle {$role->name}");
         return redirect('/admin/roles')->with('success', 'Rôle mis à jour');
     }
 
@@ -720,6 +754,7 @@ class AdminController extends Controller
         if ($role->key === 'super_admin') {
             return redirect('/admin/roles')->with('error', 'Impossible de supprimer le rôle super admin');
         }
+        $this->logActivity('delete_role', "Suppression du rôle {$role->name}");
         $role->delete();
         return redirect('/admin/roles')->with('success', 'Rôle supprimé');
     }
