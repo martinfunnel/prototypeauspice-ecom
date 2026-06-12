@@ -47,8 +47,13 @@
                 </form>
             </div>
         @else
-            {{-- Create form --}}
-            <div class="bg-card rounded-xl shadow-card border border-border p-6 mb-8">
+            <div class="mb-4 flex items-center justify-between">
+                <button type="button" onclick="document.getElementById('role-create-form').classList.toggle('hidden'); this.classList.add('hidden');" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90">
+                    + Créer un rôle
+                </button>
+            </div>
+            {{-- Create form (hidden by default) --}}
+            <div id="role-create-form" class="hidden bg-card rounded-xl shadow-card border border-border p-6 mb-8">
                 <h2 class="font-display text-lg font-bold text-foreground mb-4">Nouveau rôle</h2>
                 <form action="/admin/roles" method="POST" class="space-y-4">
                     @csrf
@@ -71,7 +76,10 @@
                             </div>
                         @endforeach
                     </div>
-                    <button type="submit" class="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground">Créer le rôle</button>
+                    <div class="flex gap-2">
+                        <button type="submit" class="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground">Créer le rôle</button>
+                        <button type="button" onclick="document.getElementById('role-create-form').classList.add('hidden'); document.querySelector('[onclick*=role-create-form]').classList.remove('hidden');" class="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition">Annuler</button>
+                    </div>
                 </form>
             </div>
         @endif
