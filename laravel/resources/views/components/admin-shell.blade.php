@@ -29,9 +29,13 @@
                 @endcanDo
 
                 @canDo('view_orders')
-                <a href="/admin/orders" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition {{ str_starts_with($path, 'admin/orders') ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:bg-muted' }}">
+                @php $pendingCount = \App\Models\Order::pending()->count(); @endphp
+                <a href="/admin/orders" class="relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition {{ str_starts_with($path, 'admin/orders') ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:bg-muted' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                     Commandes
+                    @if($pendingCount > 0)
+                    <span class="ml-auto inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">{{ $pendingCount }}</span>
+                    @endif
                 </a>
                 @endcanDo
 

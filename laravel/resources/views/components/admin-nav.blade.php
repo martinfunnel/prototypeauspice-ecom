@@ -15,7 +15,13 @@
                     <a href="/admin/communes" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/communes*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Communes</a>
                 @endcanDo
                 @canDo('view_orders')
-                    <a href="/admin/orders" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/orders*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Commandes</a>
+                @php $pendingNavCount = \App\Models\Order::pending()->count(); @endphp
+                    <a href="/admin/orders" class="relative rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/orders*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">
+                        Commandes
+                        @if($pendingNavCount > 0)
+                        <span class="absolute -top-1 -right-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">{{ $pendingNavCount }}</span>
+                        @endif
+                    </a>
                 @endcanDo
                 @canDo('view_testimonials')
                     <a href="/admin/testimonials" class="rounded-md px-3 py-1.5 text-xs font-medium {{ request()->is('admin/testimonials*') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }} transition">Témoignages</a>
