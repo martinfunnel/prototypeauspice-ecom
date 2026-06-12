@@ -21,4 +21,34 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        $exceptions->reportable(function (Throwable $e) {
+            $user = auth()->user();
+            if ($user && $e instanceof \Illuminate\Validation\ValidationException) {
+                try {
+                    \App\Models\ActivityLog::create([
+                        'user_id' => $user->id,
+                        'action' => 'validation_error',
+                        'description' => 'Erreur de validation : ' . $e->getMessage(),
+                        'ip_address' => request()->ip(),
+                        'metadata' => ['url' => request()->fullUrl(), 'errors' => $e->errors()],
+                    ]);
+                } catch (\Throwable) {
+                    // Ignore logging failures
+                }
+            } elseif ($user && !($e instanceof \Illuminate\Auth\Access\AuthorizationException) && !($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface)) {
+                // Log unexpected errors (not 403s which are already logged by middleware)
+                try {
+                    \App\Models\ActivityLog::create([
+                        'user_id' => $user->id,
+                        'action' => 'error',
+                        'description' => 'Erreur : ' . get_class($e) . ' — ' . $e->getMessage(),
+                        'ip_address' => request()->ip(),
+                        'metadata' => ['url' => request()->fullUrl(), 'file' => $e->getFile(), 'line' => $e->getLine()],
+                    ]);
+                } catch (\Throwable) {
+                    // Ignore logging failures
+                }
+            }
+        });
     })->create();

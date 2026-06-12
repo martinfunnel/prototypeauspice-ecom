@@ -63,10 +63,13 @@ $totalLogs = $logs->total();
         </div>
         <ul class="divide-y divide-border">
             @foreach($logs as $log)
-            <li class="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[140px_1fr_120px_100px_100px] md:items-center text-sm">
+            @php
+                $isError = in_array($log->action, ['unauthorized_access', 'validation_error', 'error']);
+            @endphp
+            <li class="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[140px_1fr_120px_100px_100px] md:items-center text-sm {{ $isError ? 'bg-destructive/5' : '' }}">
                 <div class="text-xs text-muted-foreground">{{ $log->created_at->format('d/m/Y H:i') }}</div>
                 <div class="min-w-0">
-                    <div class="text-xs font-semibold uppercase text-accent">{{ $log->action }}</div>
+                    <div class="text-xs font-semibold uppercase {{ $isError ? 'text-destructive' : 'text-accent' }}">{{ $log->action }}</div>
                     <div class="text-muted-foreground truncate">{{ $log->description ?? '—' }}</div>
                 </div>
                 <div class="text-xs text-muted-foreground truncate">

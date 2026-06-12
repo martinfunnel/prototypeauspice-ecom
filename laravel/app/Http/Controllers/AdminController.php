@@ -635,6 +635,7 @@ class AdminController extends Controller
             'create_user', 'delete_user', 'assign_role', 'remove_role', 'reset_password',
             'update_profile', 'update_password',
             'create_role', 'update_role', 'delete_role',
+            'unauthorized_access', 'validation_error', 'error',
         ]);
         $loggedActions = ActivityLog::distinct()->orderBy('action')->pluck('action');
         $actions = $allActions->merge($loggedActions)->unique()->sort()->values();

@@ -67,6 +67,7 @@ Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->prefix('admin'
     // Communes
     Route::middleware('can:view_communes')->get('/communes', [AdminController::class, 'communes'])->name('admin.communes');
     Route::middleware('can:create_communes')->post('/communes', [AdminController::class, 'storeCommune']);
+    Route::middleware('can:edit_communes')->patch('/communes/{id}', [AdminController::class, 'updateCommune']);
     Route::middleware('can:delete_communes')->delete('/communes/{id}', [AdminController::class, 'destroyCommune']);
 
     // Orders
