@@ -35,12 +35,23 @@ class AdminController extends Controller
             'communes_active' => Commune::where('is_active', true)->count(),
         ];
 
-        $salesByDay = Order::where('status', '!=', 'cancelled')
-            ->where('created_at', '>=', now()->subDays(6))
+        $rawSales = Order::where('status', '!=', 'cancelled')
+            ->where('created_at', '>=', now()->subDays(6)->startOfDay())
             ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as revenue'), DB::raw('COUNT(*) as count'))
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->keyBy('date');
+
+        $salesByDay = collect();
+        for ($i = 6; $i >= 0; $i--) {
+            $d = now()->subDays($i)->format('Y-m-d');
+            $salesByDay->push((object)[
+                'date' => $d,
+                'revenue' => $rawSales[$d]->revenue ?? 0,
+                'count' => $rawSales[$d]->count ?? 0,
+            ]);
+        }
 
         return view('admin.dashboard', compact('stats', 'salesByDay'));
     }
