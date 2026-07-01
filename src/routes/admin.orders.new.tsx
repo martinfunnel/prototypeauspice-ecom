@@ -110,6 +110,21 @@ function AdminNewOrder() {
         <ArrowLeft className="h-4 w-4" /> Retour aux commandes
       </Link>
 
+      {(productsError || communesError) && (
+        <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          <strong>Impossible de charger les données du formulaire.</strong>
+          <div className="mt-1 text-xs">
+            {productsError ? `Produits : ${(productsError as Error).message}` : null}
+            {productsError && communesError ? " • " : null}
+            {communesError ? `Communes : ${(communesError as Error).message}` : null}
+          </div>
+          <div className="mt-1 text-xs">Vérifiez que vous êtes bien connecté en tant qu'admin puis rechargez la page.</div>
+        </div>
+      )}
+      {(productsLoading || communesLoading) && (
+        <div className="mb-4 text-sm text-muted-foreground">Chargement des produits et communes…</div>
+      )}
+
       <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <section className="rounded-2xl border border-border bg-card p-5 shadow-card">
