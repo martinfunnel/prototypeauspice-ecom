@@ -73,15 +73,19 @@ function AdminNewOrder() {
       toast.error("Ajoutez au moins un produit");
       return;
     }
+    if (!commune_id) {
+      toast.error("Sélectionnez une commune");
+      return;
+    }
     setSaving(true);
     try {
       const res = await createFn({
         data: {
-          customer_name,
-          customer_phone,
+          customer_name: customer_name.trim(),
+          customer_phone: customer_phone.trim(),
           commune_id,
-          address,
-          notes: notes || undefined,
+          address: address.trim(),
+          notes: notes.trim() ? notes.trim() : null,
           status,
           items: valid.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
         },
@@ -89,7 +93,9 @@ function AdminNewOrder() {
       toast.success(`Commande ${res.order_number} créée`);
       navigate({ to: "/admin/orders" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      console.error("adminCreateOrder failed", err);
+      const msg = err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
+      toast.error(`Échec : ${msg}`);
     } finally {
       setSaving(false);
     }
