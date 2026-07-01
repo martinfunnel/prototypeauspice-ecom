@@ -25,8 +25,16 @@ function AdminNewOrder() {
   const communesFn = useServerFn(listCommunesAdmin);
   const createFn = useServerFn(adminCreateOrder);
 
-  const { data: products } = useQuery({ queryKey: ["admin-products-lite"], queryFn: () => productsFn() });
-  const { data: communes } = useQuery({ queryKey: ["admin-communes"], queryFn: () => communesFn() });
+  const { data: products, error: productsError, isLoading: productsLoading } = useQuery({
+    queryKey: ["admin-products-lite"],
+    queryFn: () => productsFn(),
+    retry: 1,
+  });
+  const { data: communes, error: communesError, isLoading: communesLoading } = useQuery({
+    queryKey: ["admin-communes"],
+    queryFn: () => communesFn(),
+    retry: 1,
+  });
 
   const [customer_name, setName] = useState("");
   const [customer_phone, setPhone] = useState("");
