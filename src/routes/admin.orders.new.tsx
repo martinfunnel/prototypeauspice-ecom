@@ -25,8 +25,16 @@ function AdminNewOrder() {
   const communesFn = useServerFn(listCommunesAdmin);
   const createFn = useServerFn(adminCreateOrder);
 
-  const { data: products } = useQuery({ queryKey: ["admin-products-lite"], queryFn: () => productsFn() });
-  const { data: communes } = useQuery({ queryKey: ["admin-communes"], queryFn: () => communesFn() });
+  const { data: products, error: productsError, isLoading: productsLoading } = useQuery({
+    queryKey: ["admin-products-lite"],
+    queryFn: () => productsFn(),
+    retry: 1,
+  });
+  const { data: communes, error: communesError, isLoading: communesLoading } = useQuery({
+    queryKey: ["admin-communes"],
+    queryFn: () => communesFn(),
+    retry: 1,
+  });
 
   const [customer_name, setName] = useState("");
   const [customer_phone, setPhone] = useState("");
@@ -65,15 +73,19 @@ function AdminNewOrder() {
       toast.error("Ajoutez au moins un produit");
       return;
     }
+    if (!commune_id) {
+      toast.error("Sélectionnez une commune");
+      return;
+    }
     setSaving(true);
     try {
       const res = await createFn({
         data: {
-          customer_name,
-          customer_phone,
+          customer_name: customer_name.trim(),
+          customer_phone: customer_phone.trim(),
           commune_id,
-          address,
-          notes: notes || undefined,
+          address: address.trim(),
+          notes: notes.trim() ? notes.trim() : null,
           status,
           items: valid.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
         },
@@ -81,7 +93,9 @@ function AdminNewOrder() {
       toast.success(`Commande ${res.order_number} créée`);
       navigate({ to: "/admin/orders" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      console.error("adminCreateOrder failed", err);
+      const msg = err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
+      toast.error(`Échec : ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -95,6 +109,21 @@ function AdminNewOrder() {
       >
         <ArrowLeft className="h-4 w-4" /> Retour aux commandes
       </Link>
+
+      {(productsError || communesError) && (
+        <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          <strong>Impossible de charger les données du formulaire.</strong>
+          <div className="mt-1 text-xs">
+            {productsError ? `Produits : ${(productsError as Error).message}` : null}
+            {productsError && communesError ? " • " : null}
+            {communesError ? `Communes : ${(communesError as Error).message}` : null}
+          </div>
+          <div className="mt-1 text-xs">Vérifiez que vous êtes bien connecté en tant qu'admin puis rechargez la page.</div>
+        </div>
+      )}
+      {(productsLoading || communesLoading) && (
+        <div className="mb-4 text-sm text-muted-foreground">Chargement des produits et communes…</div>
+      )}
 
       <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
