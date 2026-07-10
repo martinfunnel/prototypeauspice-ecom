@@ -77,25 +77,13 @@
             <input type="hidden" name="existing_media_url" id="f-existing_media" value="">
         </div>
 
+        <input type="hidden" name="author_name" id="f-author_name" value="—">
+        <input type="hidden" name="role" id="f-role" value="">
+        <input type="hidden" name="content" id="f-content" value="">
+
         <label class="inline-flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_active" id="f-is_active" value="1" checked class="rounded border-border">
             Visible sur le site
-        </label>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold">Auteur *</span>
-                <input type="text" name="author_name" id="f-author_name" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-            <label class="block">
-                <span class="mb-1 block text-xs font-semibold">Rôle</span>
-                <input type="text" name="role" id="f-role" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">
-            </label>
-        </div>
-
-        <label class="block">
-            <span class="mb-1 block text-xs font-semibold">Contenu *</span>
-            <textarea name="content" id="f-content" rows="3" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent"></textarea>
         </label>
 
         <div class="flex justify-end gap-2 border-t border-border pt-3">
@@ -127,10 +115,6 @@
 
             <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                    <p class="font-semibold">{{ $t->author_name }}</p>
-                    @if($t->role)
-                        <span class="text-xs text-muted-foreground">· {{ $t->role }}</span>
-                    @endif
                     <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $t->is_active ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground' }}">
                         {{ $t->is_active ? 'Visible' : 'Masqué' }}
                     </span>
@@ -140,16 +124,12 @@
                         @endfor
                     </span>
                 </div>
-                <p class="mt-1 line-clamp-2 text-sm text-muted-foreground">{{ $t->content }}</p>
             </div>
 
             <div class="flex gap-1">
                 @canDo('edit_testimonials')
                 <button type="button" onclick="fillForm(this, {{ json_encode([
                     'id' => $t->id,
-                    'author_name' => $t->author_name,
-                    'role' => $t->role ?? '',
-                    'content' => $t->content,
                     'rating' => $t->rating,
                     'media_url' => $t->media_url ?? '',
                     'media_type' => $t->media_type,
@@ -192,9 +172,6 @@ function openForm() {
     document.getElementById('f-rating').value = '5';
     document.getElementById('f-sort_order').value = '0';
     document.getElementById('f-media_type').value = 'image';
-    document.getElementById('f-author_name').value = '';
-    document.getElementById('f-role').value = '';
-    document.getElementById('f-content').value = '';
     document.getElementById('f-is_active').checked = true;
     document.getElementById('f-existing_media').value = '';
     document.getElementById('media-preview-container').classList.add('hidden');
@@ -204,9 +181,14 @@ function openForm() {
 }
 
 function fillForm(btn, data) {
-    closeForm();
     const card = btn.closest('.testimonial-row');
     const panel = getPanel();
+    // Si le panel est déjà juste après cette carte, on le ferme (toggle)
+    if (panel.previousElementSibling === card) {
+        closeForm();
+        return;
+    }
+    closeForm();
     card.after(panel);
     accordionOpen(panel, () => staggerChildren(panel));
 
@@ -217,9 +199,6 @@ function fillForm(btn, data) {
     document.getElementById('f-rating').value = data.rating;
     document.getElementById('f-sort_order').value = data.sort_order;
     document.getElementById('f-media_type').value = data.media_type;
-    document.getElementById('f-author_name').value = data.author_name;
-    document.getElementById('f-role').value = data.role;
-    document.getElementById('f-content').value = data.content;
     document.getElementById('f-is_active').checked = data.is_active;
     document.getElementById('f-existing_media').value = data.media_url;
 
@@ -241,6 +220,11 @@ function fillForm(btn, data) {
 
 function closeForm() {
     const panel = getPanel();
+    // Si déjà caché, pas besoin d'animation — juste remettre dans le container
+    if (panel.style.display === 'none') {
+        getContainer().appendChild(panel);
+        return;
+    }
     accordionClose(panel, () => {
         getContainer().appendChild(panel);
     });

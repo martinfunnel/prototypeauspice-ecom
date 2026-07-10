@@ -30,6 +30,7 @@ class PermissionSeeder extends Seeder
             ['key' => 'view_orders', 'name' => 'Voir les commandes', 'group' => 'orders'],
             ['key' => 'update_orders', 'name' => 'Modifier le statut d\'une commande', 'group' => 'orders'],
             ['key' => 'delete_orders', 'name' => 'Supprimer une commande', 'group' => 'orders'],
+            ['key' => 'order_telegram_notification', 'name' => 'Notification commande par Telegram', 'group' => 'orders'],
             ['key' => 'view_testimonials', 'name' => 'Voir les témoignages', 'group' => 'testimonials'],
             ['key' => 'create_testimonials', 'name' => 'Créer un témoignage', 'group' => 'testimonials'],
             ['key' => 'edit_testimonials', 'name' => 'Modifier un témoignage', 'group' => 'testimonials'],
@@ -44,6 +45,7 @@ class PermissionSeeder extends Seeder
             ['key' => 'delete_users', 'name' => 'Supprimer un utilisateur', 'group' => 'users'],
             ['key' => 'manage_roles', 'name' => 'Gérer les rôles', 'group' => 'roles'],
             ['key' => 'manage_permissions', 'name' => 'Gérer les permissions', 'group' => 'roles'],
+            ['key' => 'manage_country_codes', 'name' => 'Gérer les codes pays', 'group' => 'settings'],
         ];
 
         foreach ($permissions as $perm) {
@@ -64,10 +66,11 @@ class PermissionSeeder extends Seeder
         $adminPermIds = Permission::whereNotIn('key', ['manage_roles', 'manage_permissions'])->pluck('id')->toArray();
         $adminRole->permissions()->sync($adminPermIds);
 
-        // Manager gets view + update on products, orders, testimonials
+        // Manager gets view + update on products, orders, testimonials + Telegram notif
         $managerPermIds = Permission::whereIn('key', [
             'view_dashboard', 'view_products', 'view_categories', 'view_communes',
-            'view_orders', 'update_orders', 'view_testimonials', 'view_banners',
+            'view_orders', 'update_orders', 'order_telegram_notification',
+            'view_testimonials', 'view_banners', 'manage_country_codes',
         ])->pluck('id')->toArray();
         $managerRole->permissions()->sync($managerPermIds);
 

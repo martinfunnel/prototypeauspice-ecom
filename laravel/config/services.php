@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    /* WhatsApp — DÉSACTIVÉ, remplacé par Telegram
+    'whatsapp' => [
+        'enabled' => env('WHATSAPP_ENABLED', false),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
+        'api_version' => env('WHATSAPP_API_VERSION', 'v18.0'),
+        'client_template' => env('WHATSAPP_CLIENT_TEMPLATE'),
+        'manager_template' => env('WHATSAPP_MANAGER_TEMPLATE'),
+        'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'auspice_webhook_2024'),
+    ],
+    */
+
+    'telegram' => [
+        'enabled' => env('TELEGRAM_ENABLED', false),
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'bot_username' => env('TELEGRAM_BOT_USERNAME'),
+    ],
+
 ];

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Commune;
+use App\Models\CountryCode;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -20,18 +22,29 @@ class OrderController extends Controller
         }
 
         $communes = Commune::active()->orderBy('zone')->orderBy('name')->get();
-        return view('order', compact('cart', 'communes'));
+        $countryCodes = CountryCode::active()->orderBy('sort_order')->get();
+        return view('order', compact('cart', 'communes', 'countryCodes'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'required|string|max:20',
+            'country_code_id' => 'required|exists:country_codes,id',
+            'customer_phone' => 'required|string|max:30',
             'commune_id' => 'required|exists:communes,id',
             'address' => 'required|string|max:500',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        // Validation du format téléphone selon le pays
+        $countryCode = CountryCode::findOrFail($validated['country_code_id']);
+        $rawPhone = preg_replace('/\D/', '', $validated['customer_phone']);
+        if (!$countryCode->validateRaw($rawPhone)) {
+            return back()->withErrors(['customer_phone' => "Numéro invalide pour {$countryCode->name}. Format attendu : {$countryCode->code} {$countryCode->format} ({$countryCode->digits} chiffres)"])->withInput();
+        }
+
+        $fullPhone = $countryCode->code . ' ' . $countryCode->formatNumber($rawPhone);
 
         $cart = CartService::items();
         if (empty($cart['items'])) {
@@ -43,7 +56,7 @@ class OrderController extends Controller
         $order = Order::create([
             'order_number' => 'CMD-' . now()->format('ymd') . '-' . strtoupper(Str::random(5)),
             'customer_name' => $request->customer_name,
-            'customer_phone' => $request->customer_phone,
+            'customer_phone' => $fullPhone,
             'commune_id' => $commune->id,
             'commune_name' => $commune->name,
             'address' => $request->address,
@@ -63,9 +76,20 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'],
                 'subtotal' => $item['subtotal'],
             ]);
+
+            // Décrémenter le stock
+            $product = Product::find($item['product']->id);
+            if ($product) {
+                $product->decrement('stock', $item['quantity']);
+            }
         }
 
         CartService::clear();
+
+        // Notifications Telegram
+        $tg = new TelegramService();
+        $tg->notifyClient($order);
+        $tg->notifyManagers($order);
 
         return redirect()->route('track')
             ->with('success', 'Commande passée avec succès ! Numéro : ' . $order->order_number);
@@ -73,14 +97,23 @@ class OrderController extends Controller
 
     public function storeDirect(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'required|string|max:20',
+            'country_code_id' => 'required|exists:country_codes,id',
+            'customer_phone' => 'required|string|max:30',
             'commune_id' => 'required|exists:communes,id',
             'address' => 'required|string|max:500',
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
         ]);
+
+        $countryCode = CountryCode::findOrFail($validated['country_code_id']);
+        $rawPhone = preg_replace('/\D/', '', $validated['customer_phone']);
+        if (!$countryCode->validateRaw($rawPhone)) {
+            return back()->withErrors(['customer_phone' => "Numéro invalide pour {$countryCode->name}. Format attendu : {$countryCode->code} {$countryCode->format} ({$countryCode->digits} chiffres)"])->withInput();
+        }
+
+        $fullPhone = $countryCode->code . ' ' . $countryCode->formatNumber($rawPhone);
 
         $product = Product::findOrFail($request->product_id);
         $commune = Commune::findOrFail($request->commune_id);
@@ -89,7 +122,7 @@ class OrderController extends Controller
         $order = Order::create([
             'order_number' => 'CMD-' . now()->format('ymd') . '-' . strtoupper(Str::random(5)),
             'customer_name' => $request->customer_name,
-            'customer_phone' => $request->customer_phone,
+            'customer_phone' => $fullPhone,
             'commune_id' => $commune->id,
             'commune_name' => $commune->name,
             'address' => $request->address,
@@ -108,20 +141,13 @@ class OrderController extends Controller
             'subtotal' => $subtotal,
         ]);
 
-        // Notif WhatsApp admin (même logique que React notifyAdminInNewTab)
-        $waMsg = urlencode(
-            "📦 *Nouvelle commande*\n\n" .
-            "N° : {$order->order_number}\n" .
-            "Client : {$request->customer_name}\n" .
-            "Tél : {$request->customer_phone}\n" .
-            "Commune : {$commune->name}\n" .
-            "Adresse : {$request->address}\n\n" .
-            "Article : {$product->name} x {$request->quantity}\n" .
-            "Sous-total : " . number_format($subtotal, 0, ',', ' ') . " FCFA\n" .
-            "Livraison : " . number_format($commune->delivery_fee, 0, ',', ' ') . " FCFA\n" .
-            "*Total : " . number_format($order->total, 0, ',', ' ') . " FCFA*"
-        );
-        session()->flash('wa_admin_url', "https://wa.me/?text={$waMsg}");
+        // Décrémenter le stock
+        $product->decrement('stock', $request->quantity);
+
+        // Notifications Telegram
+        $tg = new TelegramService();
+        $tg->notifyClient($order);
+        $tg->notifyManagers($order);
 
         return redirect()->route('track')
             ->with('success', 'Commande envoyée ! Numéro : ' . $order->order_number);

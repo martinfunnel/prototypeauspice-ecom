@@ -17,6 +17,7 @@ use App\Models\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -156,14 +157,40 @@ class AdminController extends Controller
         ];
     }
 
+    private function uploadPublic($file, string $folder): string
+    {
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+        // La vraie racine web (DOCUMENT_ROOT) n'est PAS public/ sur cet hébergeur.
+        // public_path() = /htdocs/project/public mais le serveur sert depuis /htdocs.
+        // On écrit donc dans dirname(base_path())/uploads = la racine réellement servie.
+        $webRoot = dirname(base_path());
+        $destPath = $webRoot . '/uploads/' . $folder;
+        if (!is_dir($destPath)) {
+            mkdir($destPath, 0755, true);
+        }
+        $destFile = $destPath . '/' . $filename;
+        $tmpPath = $file->getPathname();
+
+        // copy() est plus fiable que move() cross-filesystem
+        if (!copy($tmpPath, $destFile)) {
+            $err = error_get_last()['message'] ?? 'unknown';
+            throw new \Exception("Upload échoué: $err | tmp=$tmpPath | dest=$destFile");
+        }
+        if (!file_exists($destFile)) {
+            throw new \Exception("Fichier non créé après copy: $destFile");
+        }
+
+        return url('uploads/' . $folder . '/' . $filename);
+    }
+
     private function uploadImages(?array $files): array
     {
         if (!$files) return [];
         $urls = [];
         foreach ($files as $file) {
             if ($file && $file->isValid()) {
-                $path = $file->store('products', 'public');
-                $urls[] = asset('storage/' . $path);
+                $urls[] = $this->uploadPublic($file, 'products');
             }
         }
         return $urls;
@@ -275,8 +302,7 @@ class AdminController extends Controller
 
     private function uploadSingleImage($file): string
     {
-        $path = $file->store('categories', 'public');
-        return asset('storage/' . $path);
+        return $this->uploadPublic($file, 'categories');
     }
 
     public function destroyCategory(string $id)
@@ -306,6 +332,14 @@ class AdminController extends Controller
         $commune->update($request->all());
         $this->logActivity('update_commune', "Mise à jour de la commune {$commune->name}", Commune::class, $commune->id);
         return redirect('/admin/communes')->with('success', 'Commune mise à jour');
+    }
+
+    public function toggleCommune(string $id)
+    {
+        $commune = Commune::findOrFail($id);
+        $commune->update(['is_active' => !$commune->is_active]);
+        $this->logActivity('toggle_commune', ($commune->is_active ? 'Activation' : 'Désactivation') . " de la commune {$commune->name}", Commune::class, $commune->id);
+        return redirect('/admin/communes')->with('success', $commune->is_active ? 'Commune activée' : 'Commune désactivée');
     }
 
     public function destroyCommune(string $id)
@@ -356,9 +390,76 @@ class AdminController extends Controller
     public function updateOrderStatus(Request $request, string $id)
     {
         $order = Order::findOrFail($id);
-        $order->update(['status' => $request->status]);
-        $this->logActivity('update_order_status', "Changement statut commande #{$order->order_number} -> {$request->status}", Order::class, $order->id);
+        $oldStatus = $order->status;
+        $newStatus = $request->status;
+
+        $order->update(['status' => $newStatus]);
+        $this->logActivity('update_order_status', "Changement statut commande #{$order->order_number} -> {$newStatus}", Order::class, $order->id);
+
+        // Gestion du stock selon le changement de statut
+        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+            // Annulation : restocker les produits
+            foreach ($order->items as $item) {
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $product->increment('stock', $item->quantity);
+                }
+            }
+        } elseif ($oldStatus === 'cancelled' && $newStatus !== 'cancelled') {
+            // Réactivation d'une commande annulée : déstocker
+            foreach ($order->items as $item) {
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $product->decrement('stock', $item->quantity);
+                }
+            }
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'status' => $order->status, 'message' => 'Statut mis à jour']);
+        }
+
         return redirect('/admin/orders')->with('success', 'Statut mis à jour');
+    }
+
+    public function bulkUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'string',
+            'status' => 'required|string',
+        ]);
+
+        $newStatus = $request->status;
+        $orders = Order::with('items')->whereIn('id', $request->ids)->get();
+        $updated = 0;
+
+        foreach ($orders as $order) {
+            $oldStatus = $order->status;
+            if ($oldStatus === $newStatus) continue;
+
+            $order->update(['status' => $newStatus]);
+            $this->logActivity('bulk_update_order_status', "Changement statut (lot) commande #{$order->order_number} -> {$newStatus}", Order::class, $order->id);
+
+            if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+                foreach ($order->items as $item) {
+                    $product = Product::find($item->product_id);
+                    if ($product) $product->increment('stock', $item->quantity);
+                }
+            } elseif ($oldStatus === 'cancelled' && $newStatus !== 'cancelled') {
+                foreach ($order->items as $item) {
+                    $product = Product::find($item->product_id);
+                    if ($product) $product->decrement('stock', $item->quantity);
+                }
+            }
+            $updated++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'updated' => $updated,
+            'message' => $updated . ' commande(s) mise(s) à jour',
+        ]);
     }
 
     public function testimonials()
@@ -370,9 +471,9 @@ class AdminController extends Controller
     private function prepareTestimonialData(Request $request): array
     {
         $validated = $request->validate([
-            'author_name' => 'required|string|max:120',
+            'author_name' => 'nullable|string|max:120',
             'role' => 'nullable|string|max:120',
-            'content' => 'required|string|max:2000',
+            'content' => 'nullable|string|max:2000',
             'rating' => 'required|integer|min:1|max:5',
             'media_type' => 'required|in:image,video',
             'is_active' => 'nullable|boolean',
@@ -380,9 +481,9 @@ class AdminController extends Controller
         ]);
 
         $data = [
-            'author_name' => $validated['author_name'],
+            'author_name' => $validated['author_name'] ?: '—',
             'role' => $validated['role'] ?: null,
-            'content' => $validated['content'],
+            'content' => $validated['content'] ?: '',
             'rating' => $validated['rating'],
             'media_type' => $validated['media_type'],
             'is_active' => $validated['is_active'] ?? false,
@@ -390,10 +491,8 @@ class AdminController extends Controller
         ];
 
         if ($request->hasFile('media')) {
-            $ext = $request->file('media')->getClientOriginalExtension();
             $folder = $data['media_type'] === 'video' ? 'testimonials/videos' : 'testimonials/images';
-            $path = $request->file('media')->store($folder, 'public');
-            $data['media_url'] = asset('storage/' . $path);
+            $data['media_url'] = $this->uploadPublic($request->file('media'), $folder);
         } elseif ($request->has('remove_media')) {
             $data['media_url'] = null;
         }
@@ -449,8 +548,7 @@ class AdminController extends Controller
         ];
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('banners', 'public');
-            $data['image_url'] = asset('storage/' . $path);
+            $data['image_url'] = $this->uploadPublic($request->file('image'), 'banners');
         } elseif ($request->has('remove_image')) {
             $data['image_url'] = null;
         }
@@ -677,7 +775,7 @@ class AdminController extends Controller
         $allActions = collect([
             'stock_adjust', 'create_product', 'update_product', 'delete_product', 'toggle_product', 'set_promo',
             'create_category', 'update_category', 'delete_category',
-            'create_commune', 'update_commune', 'delete_commune',
+            'create_commune', 'update_commune', 'delete_commune', 'toggle_commune',
             'update_order_status', 'delete_order',
             'create_testimonial', 'update_testimonial', 'delete_testimonial',
             'update_banner',
@@ -858,5 +956,131 @@ class AdminController extends Controller
         $this->logActivity('delete_role', "Suppression du rôle {$role->name}");
         $role->delete();
         return redirect('/admin/roles')->with('success', 'Rôle supprimé');
+    }
+
+    /* ---- Gérants de commandes (notifications Telegram) ---- */
+
+    public function orderManagers()
+    {
+        $managers = \App\Models\OrderManager::orderBy('name')->get();
+        return view('admin.order-managers', compact('managers'));
+    }
+
+    public function storeOrderManager(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:30',
+        ]);
+
+        \App\Models\OrderManager::create($validated);
+        $this->logActivity('create_order_manager', "Ajout du gérant {$validated['name']}");
+        return redirect('/admin/order-managers')->with('success', 'Gérant ajouté');
+    }
+
+    public function updateOrderManager(Request $request, string $id)
+    {
+        $manager = \App\Models\OrderManager::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:30',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $manager->update([
+            'name' => $validated['name'],
+            'phone' => $validated['phone'],
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+        $this->logActivity('update_order_manager', "Mise à jour du gérant {$manager->name}");
+        return redirect('/admin/order-managers')->with('success', 'Gérant mis à jour');
+    }
+
+    public function toggleOrderManager(string $id)
+    {
+        $manager = \App\Models\OrderManager::findOrFail($id);
+        $manager->update(['is_active' => !$manager->is_active]);
+        $action = $manager->is_active ? 'réactivé' : 'suspendu';
+        $this->logActivity('toggle_order_manager', "Gérant {$manager->name} {$action}");
+        return redirect('/admin/order-managers')->with('success', "Gérant {$action}");
+    }
+
+    public function destroyOrderManager(string $id)
+    {
+        $manager = \App\Models\OrderManager::findOrFail($id);
+        $this->logActivity('delete_order_manager', "Suppression du gérant {$manager->name}");
+        $manager->delete();
+        return redirect('/admin/order-managers')->with('success', 'Gérant supprimé');
+    }
+
+    /* ---- Codes pays (téléphones) ---- */
+
+    public function countryCodes()
+    {
+        $codes = \App\Models\CountryCode::orderBy('sort_order')->get();
+        return view('admin.country-codes', compact('codes'));
+    }
+
+    public function storeCountryCode(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:10',
+            'iso' => 'required|string|size:3',
+            'digits' => 'required|integer|min:1|max:20',
+            'format' => 'required|string|max:50',
+            'pattern' => 'required|string|max:100',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $validated['is_active'] = true;
+        \App\Models\CountryCode::create($validated);
+        $this->logActivity('create_country_code', "Ajout du code pays {$validated['name']} ({$validated['code']})");
+        return redirect('/admin/country-codes')->with('success', 'Code pays ajouté');
+    }
+
+    public function updateCountryCode(Request $request, string $id)
+    {
+        $code = \App\Models\CountryCode::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:10',
+            'iso' => 'required|string|size:3',
+            'digits' => 'required|integer|min:1|max:20',
+            'format' => 'required|string|max:50',
+            'pattern' => 'required|string|max:100',
+            'sort_order' => 'nullable|integer',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $code->update([
+            'name' => $validated['name'],
+            'code' => $validated['code'],
+            'iso' => $validated['iso'],
+            'digits' => $validated['digits'],
+            'format' => $validated['format'],
+            'pattern' => $validated['pattern'],
+            'sort_order' => $validated['sort_order'] ?? $code->sort_order,
+            'is_active' => $request->boolean('is_active', $code->is_active),
+        ]);
+        $this->logActivity('update_country_code', "Mise à jour du code pays {$code->name}");
+        return redirect('/admin/country-codes')->with('success', 'Code pays mis à jour');
+    }
+
+    public function toggleCountryCode(string $id)
+    {
+        $code = \App\Models\CountryCode::findOrFail($id);
+        $code->update(['is_active' => !$code->is_active]);
+        $status = $code->fresh()->is_active ? 'activé' : 'désactivé';
+        $this->logActivity('toggle_country_code', "Code pays {$code->name} {$status}");
+        return redirect('/admin/country-codes')->with('success', "Code pays {$status}");
+    }
+
+    public function destroyCountryCode(string $id)
+    {
+        $code = \App\Models\CountryCode::findOrFail($id);
+        $this->logActivity('delete_country_code', "Suppression du code pays {$code->name}");
+        $code->delete();
+        return redirect('/admin/country-codes')->with('success', 'Code pays supprimé');
     }
 }

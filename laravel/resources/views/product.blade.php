@@ -9,9 +9,9 @@
     <div class="grid gap-8 md:grid-cols-2">
         {{-- Images --}}
         <div>
-            <div class="aspect-square overflow-hidden rounded-2xl bg-muted">
+            <div class="aspect-square max-h-[400px] overflow-hidden rounded-2xl bg-muted mx-auto w-full">
                 @if(!empty($product->images[0]))
-                    <img id="main-image" src="{{ $product->images[0] }}" alt="{{ $product->name }}" class="h-full w-full object-cover">
+                    <img id="main-image" src="{{ $product->images[0] }}" alt="{{ $product->name }}" class="h-full w-full object-contain">
                 @else
                     <div class="grid h-full place-items-center text-7xl">📦</div>
                 @endif
@@ -62,7 +62,7 @@
                     <input type="number" id="qty" name="quantity" value="1" min="1" class="w-10 text-center font-semibold bg-transparent border-none focus:ring-0 p-0">
                     <button type="button" onclick="let q=document.getElementById('qty'); q.value=parseInt(q.value)+1; q.dispatchEvent(new Event('input'));" class="grid h-11 w-11 place-items-center hover:bg-muted transition"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button>
                 </div>
-                <button type="submit" class="ml-auto rounded-xl bg-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent transition hover:scale-105">Ajouter au panier</button>
+                <button type="button" onclick="document.getElementById('commande-directe').scrollIntoView({ behavior: 'smooth' })" class="ml-auto rounded-xl bg-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent transition hover:scale-105">Commander</button>
             </form>
 
             {{-- Share Buttons --}}
@@ -98,7 +98,7 @@
     </div>
 
     {{-- Section commande directe --}}
-    <div class="mt-12 rounded-2xl border border-border bg-card p-6 shadow-card md:p-8">
+    <div id="commande-directe" class="mt-12 rounded-2xl border border-border bg-card p-6 shadow-card md:p-8">
         <h2 class="font-display text-2xl font-bold">Commander ce produit</h2>
         <p class="mt-1 text-sm text-success">💵 Paiement à la livraison</p>
 
@@ -112,10 +112,18 @@
                     <span class="mb-1.5 block text-sm font-semibold">Nom complet *</span>
                     <input type="text" name="customer_name" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
                 </label>
-                <label class="block">
+                <div class="block">
                     <span class="mb-1.5 block text-sm font-semibold">Numéro de téléphone *</span>
-                    <input type="tel" name="customer_phone" required placeholder="+225 07 00 00 00 00" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
-                </label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <select id="country-code-select" name="country_code_id" required class="w-full shrink-0 rounded-lg border border-border bg-background px-3 py-2.5 text-sm shadow-sm outline-none focus:border-accent sm:w-auto" onchange="updatePhoneFormat()">
+                            <option value="">Pays</option>
+                            @foreach(\App\Models\CountryCode::orderBy('sort_order')->get() as $cc)
+                                <option value="{{ $cc->id }}" data-code="{{ $cc->code }}" data-digits="{{ $cc->digits }}" data-format="{{ $cc->format }}" data-pattern="{{ $cc->pattern }}" {{ $cc->iso === 'CIV' ? 'selected' : '' }}>@if($cc->flag_url)<img src="{{ $cc->flag_url }}" alt="" class="inline h-4 w-5 align-middle mr-1">@endif{{ $cc->name }} ({{ $cc->code }})</option>
+                            @endforeach
+                        </select>
+                        <input type="tel" id="customer-phone" name="customer_phone" required placeholder="Choisir un pays d'abord" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent" disabled>
+                    </div>
+                </div>
                 <label class="block">
                     <span class="mb-1.5 block text-sm font-semibold">Commune / lieu de livraison *</span>
                     <select name="commune_id" required id="commune-select" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
@@ -176,9 +184,11 @@
                 <p class="whitespace-pre-line text-base leading-relaxed text-foreground/80">{{ $product->description }}</p>
             @endif
             @if(!empty($product->detail_images))
-                <div class="grid gap-4 {{ $product->description ? 'mt-6' : '' }} sm:grid-cols-2">
-                    @foreach($product->detail_images as $src)
-                        <div class="overflow-hidden rounded-xl bg-muted">
+                @php $detailItems = count($product->detail_images) > 1 ? array_merge($product->detail_images, $product->detail_images) : $product->detail_images; @endphp
+                <div class="detail-images-track {{ $product->description ? 'mt-6' : '' }} flex gap-3 overflow-x-auto scroll-smooth pb-2"
+                     style="scrollbar-width:none; -ms-overflow-style:none;">
+                    @foreach($detailItems as $src)
+                        <div class="aspect-square w-[160px] shrink-0 overflow-hidden rounded-xl bg-muted md:w-[200px]">
                             <img src="{{ $src }}" alt="{{ $product->name }} détail" class="h-full w-full object-cover" loading="lazy">
                         </div>
                     @endforeach
@@ -234,28 +244,12 @@
     </section>
 
     {{-- Testimonials --}}
-    @if($testimonials->count())
-    <section class="mt-16">
-        <h2 class="font-display text-2xl font-bold md:text-3xl">Ce que disent nos clients</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Avis vérifiés de la communauté Auspice Market.</p>
-        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($testimonials as $t)
-                <div class="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-card">
-                    <div class="flex items-center gap-1">
-                        @for($i = 1; $i <= 5; $i++)
-                            <svg class="h-4 w-4 {{ $i <= $t->rating ? 'text-warning fill-warning' : 'text-muted-foreground' }}" fill="{{ $i <= $t->rating ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
-                        @endfor
-                    </div>
-                    <p class="text-sm text-foreground/80">"{{ $t->content }}"</p>
-                    <div class="mt-auto">
-                        <p class="text-sm font-semibold">{{ $t->author_name }}</p>
-                        <p class="text-xs text-muted-foreground">{{ $t->role }}</p>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </section>
-    @endif
+    @include('components.testimonials-carousel', [
+        'testimonials' => $testimonials,
+        'heading' => 'Ce que disent nos clients',
+        'subheading' => 'Avis vérifiés de la communauté Auspice Market.',
+        'label' => 'Témoignages'
+    ])
 
     {{-- Produits similaires --}}
     @if($related->count())
@@ -272,6 +266,38 @@
 </section>
 
 <script>
+/* ---- Carrousel images détails ---- */
+(function() {
+    const track = document.querySelector('.detail-images-track');
+    if (!track) return;
+
+    const style = document.createElement('style');
+    style.textContent = '.detail-images-track::-webkit-scrollbar { display: none !important; }';
+    document.head.appendChild(style);
+
+    let raf = 0;
+    let last = performance.now();
+    const speed = 40;
+
+    function tick(now) {
+        const dt = (now - last) / 1000;
+        last = now;
+        if (!track.classList.contains('paused') && track.scrollWidth > track.clientWidth) {
+            track.scrollLeft += speed * dt;
+            if (track.scrollLeft >= track.scrollWidth / 2) {
+                track.scrollLeft -= track.scrollWidth / 2;
+            }
+        }
+        raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+
+    track.addEventListener('mouseenter', () => track.classList.add('paused'));
+    track.addEventListener('mouseleave', () => track.classList.remove('paused'));
+    track.addEventListener('touchstart', () => track.classList.add('paused'));
+    track.addEventListener('touchend', () => track.classList.remove('paused'));
+})();
+
 (function() {
     const qtyInput = document.getElementById('qty');
     const directQty = document.getElementById('direct-qty');
@@ -299,6 +325,77 @@
     communeSelect.addEventListener('change', updateRecap);
     updateRecap();
 })();
+
+/* ---- Format téléphone pays ---- */
+const phoneInput = document.getElementById('customer-phone');
+const countrySelect = document.getElementById('country-code-select');
+let currentDigits = 0;
+let currentFormat = '';
+let currentPattern = null;
+
+function updatePhoneFormat() {
+    const opt = countrySelect.selectedOptions[0];
+    if (!opt || !opt.value) {
+        phoneInput.disabled = true;
+        phoneInput.placeholder = 'Choisir un pays d\'abord';
+        return;
+    }
+    phoneInput.disabled = false;
+    phoneInput.value = '';
+    currentDigits = parseInt(opt.dataset.digits, 10);
+    currentFormat = opt.dataset.format;
+    currentPattern = new RegExp(opt.dataset.pattern.replace(/^\//, '').replace(/\/$/, ''));
+    phoneInput.placeholder = currentFormat;
+    phoneInput.focus();
+}
+
+phoneInput.addEventListener('input', function(e) {
+    if (!currentDigits) return;
+    let raw = this.value.replace(/\D/g, '');
+    if (raw.length > currentDigits) raw = raw.slice(0, currentDigits);
+    let formatted = '';
+    let digitIdx = 0;
+    for (let i = 0; i < currentFormat.length && digitIdx < raw.length; i++) {
+        if (currentFormat[i] === 'X') {
+            formatted += raw[digitIdx];
+            digitIdx++;
+        } else {
+            if (digitIdx > 0 || i === 0) {
+                formatted += currentFormat[i];
+            }
+        }
+    }
+    this.value = formatted;
+});
+
+if (countrySelect.value) {
+    updatePhoneFormat();
+}
+
+// Validation native avant soumission
+document.querySelector('form[action="/commande-directe"]').addEventListener('submit', function(e) {
+    const opt = countrySelect.selectedOptions[0];
+    if (!opt || !opt.value) {
+        e.preventDefault();
+        countrySelect.focus();
+        return false;
+    }
+    const raw = phoneInput.value.replace(/\D/g, '');
+    const pattern = new RegExp(opt.dataset.pattern.replace(/^\//, '').replace(/\/$/, ''));
+    if (!pattern.test(raw)) {
+        e.preventDefault();
+        phoneInput.focus();
+        return false;
+    }
+    let hidden = document.querySelector('input[name="country_code"]');
+    if (!hidden) {
+        hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'country_code';
+        this.appendChild(hidden);
+    }
+    hidden.value = opt.dataset.code;
+});
 
 /* ---- AJAX ajout panier ---- */
 document.querySelector('form[action="/panier/ajouter"]').addEventListener('submit', async function(e) {

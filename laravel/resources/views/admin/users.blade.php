@@ -177,10 +177,16 @@ let logActions = [];
 
 function openCreatePanel() {
     const panel = document.getElementById('create-panel');
+    if (panel.style.display !== 'none') {
+        closeCreatePanel();
+        return;
+    }
     accordionOpen(panel, () => staggerChildren(panel));
 }
 function closeCreatePanel() {
-    accordionClose(document.getElementById('create-panel'));
+    const panel = document.getElementById('create-panel');
+    if (panel.style.display === 'none') return;
+    accordionClose(panel);
 }
 
 function removeDetailRows() {

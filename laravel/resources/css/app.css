@@ -27,11 +27,11 @@
     --color-secondary-foreground: #334155;
     --color-muted: #f1f5f9;
     --color-muted-foreground: #64748b;
-    --color-accent: #4caf7a;
+    --color-accent: #2e7d4a;
     --color-accent-foreground: #ffffff;
     --color-destructive: #c94a4a;
     --color-destructive-foreground: #ffffff;
-    --color-success: #4caf7a;
+    --color-success: #2e7d4a;
     --color-success-foreground: #ffffff;
     --color-warning: #d4a843;
     --color-warning-foreground: #1e293b;
@@ -43,21 +43,21 @@
     /* Sidebar colors — identiques au React */
     --color-sidebar: #1e293b;
     --color-sidebar-foreground: #f8fafc;
-    --color-sidebar-primary: #4caf7a;
+    --color-sidebar-primary: #2e7d4a;
     --color-sidebar-primary-foreground: #ffffff;
     --color-sidebar-accent: #334155;
     --color-sidebar-accent-foreground: #f8fafc;
     --color-sidebar-border: #334155;
-    --color-sidebar-ring: #4caf7a;
+    --color-sidebar-ring: #2e7d4a;
 }
 
 :root {
     --gradient-hero: linear-gradient(135deg, #3b82f6, #2563eb);
-    --gradient-accent: linear-gradient(135deg, #5cc78a, #4caf7a);
+    --gradient-accent: linear-gradient(135deg, #4caf7a, #2e7d4a);
     --gradient-soft: linear-gradient(180deg, #f8fafc, #e8f5e9);
     --shadow-card: 0 1px 3px rgba(59, 130, 246, 0.08), 0 4px 16px rgba(59, 130, 246, 0.06);
     --shadow-elevated: 0 10px 40px -10px rgba(59, 130, 246, 0.25);
-    --shadow-accent: 0 8px 24px -8px rgba(76, 175, 122, 0.4);
+    --shadow-accent: 0 8px 24px -8px rgba(46, 125, 74, 0.4);
 }
 
 @layer base {

@@ -283,8 +283,13 @@ function filterCategories() {
 }
 
 function fillForm(btn, data) {
-    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => accordionClose(el, () => el.remove()));
     const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('edit-panel')) {
+        accordionClose(panel, () => panel.remove());
+        return;
+    }
+    document.querySelectorAll('.detail-panel, .edit-panel').forEach(el => accordionClose(el, () => el.remove()));
 
     const wrapper = document.createElement('div');
     wrapper.className = 'edit-panel col-span-full px-4 py-4 border-t border-border bg-muted/20';

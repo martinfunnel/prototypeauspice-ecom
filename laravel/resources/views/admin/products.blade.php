@@ -38,7 +38,7 @@
 {{-- Formulaire création / édition --}}
 <div id="product-form" class="mt-6 rounded-2xl border border-border bg-card shadow-card p-5" style="display:none;">
     <h2 id="form-title" class="font-display text-lg font-bold mb-4">Nouveau produit</h2>
-    <form id="product-form-tag" action="/admin/products" method="POST" class="space-y-3">
+    <form id="product-form-tag" action="/admin/products" method="POST" enctype="multipart/form-data" class="space-y-3">
         @csrf
         <input type="hidden" name="_method" id="method-override" value="">
 
@@ -393,8 +393,13 @@ function openPromoInline(btn, data) {
 }
 
 function fillForm(btn, data) {
-    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => closePanelAnim(el));
     const li = btn.closest('li');
+    let panel = li.nextElementSibling;
+    if (panel && panel.classList.contains('edit-panel')) {
+        closePanelAnim(panel);
+        return;
+    }
+    document.querySelectorAll('.detail-panel, .edit-panel, .promo-panel').forEach(el => closePanelAnim(el));
 
     // build inline edit panel
     const wrapper = document.createElement('div');
@@ -421,6 +426,14 @@ function fillForm(btn, data) {
         + '@endforeach'
         + '</select></label>'
         + '</div>'
+        + '<div class="block"><span class="mb-1 block text-xs font-semibold">Images du produit (JPEG/PNG)</span>'
+        + '<input type="file" name="product_images[]" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">'
+        + '<input type="hidden" name="existing_images" id="edit-existing_images" value="">'
+        + '<div id="edit-preview-images" class="mt-3 flex flex-wrap gap-2"></div></div>'
+        + '<div class="block"><span class="mb-1 block text-xs font-semibold">Images de la section « Détails » (JPEG/PNG)</span>'
+        + '<input type="file" name="detail_product_images[]" accept="image/jpeg,image/png" multiple class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent">'
+        + '<input type="hidden" name="existing_detail_images" id="edit-existing_detail_images" value="">'
+        + '<div id="edit-preview-detail-images" class="mt-3 flex flex-wrap gap-2"></div></div>'
         + '<div class="flex flex-wrap gap-4 pt-1">'
         + '<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" ' + (data.is_active ? 'checked' : '') + ' class="rounded border-border"> Actif</label>'
         + '<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_popular" value="1" ' + (data.is_popular ? 'checked' : '') + ' class="rounded border-border"> Mis en avant</label>'
@@ -431,6 +444,15 @@ function fillForm(btn, data) {
         + '</div></form>';
     li.after(wrapper);
     accordionOpen(wrapper, () => staggerChildren(wrapper));
+
+    // Charger les images existantes + prévisualisations
+    const editImages = Array.isArray(data.images) ? data.images : (data.images ? data.images.split('\n').filter(u => u.trim()) : []);
+    document.getElementById('edit-existing_images').value = editImages.join('\n');
+    renderPreview('edit-preview-images', editImages, 'edit-existing_images');
+
+    const editDetailImages = Array.isArray(data.detail_images) ? data.detail_images : (data.detail_images ? data.detail_images.split('\n').filter(u => u.trim()) : []);
+    document.getElementById('edit-existing_detail_images').value = editDetailImages.join('\n');
+    renderPreview('edit-preview-detail-images', editDetailImages, 'edit-existing_detail_images');
 }
 </script>
 

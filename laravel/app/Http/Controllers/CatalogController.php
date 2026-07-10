@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\PromoBanner;
+use App\Models\Testimonial;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
@@ -30,7 +31,8 @@ class CatalogController extends Controller
         $products = $query->orderBy('name')->paginate(12);
         $categories = Category::orderBy('sort_order')->get();
         $banner = PromoBanner::active()->where('key', 'catalogue')->first();
+        $testimonials = Testimonial::active()->orderBy('sort_order')->limit(6)->get();
 
-        return view('catalog', compact('products', 'categories', 'banner'));
+        return view('catalog', compact('products', 'categories', 'banner', 'testimonials'));
     }
 }

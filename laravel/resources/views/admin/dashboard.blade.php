@@ -64,24 +64,41 @@ $tones = [
             <h2 class="font-display text-base font-bold">Activité 7 derniers jours</h2>
             <span class="text-xs text-muted-foreground">CA & nombre de commandes</span>
         </div>
-        @php $maxRev = $salesByDay->max('revenue') ?: 1; @endphp
-        <div class="flex items-end gap-2 h-48">
-            @foreach($salesByDay as $day)
-                @php $h = min(100, ($day->revenue / $maxRev) * 100); @endphp
-                <div class="flex-1 flex flex-col items-center gap-1 group relative" title="{{ number_format($day->revenue, 0, ',', ' ') }} FCFA — {{ $day->count }} commande{{ $day->count > 1 ? 's' : '' }}">
-                    <div class="w-full rounded-t-md bg-accent/30 relative transition-all group-hover:bg-accent/50" style="height: {{ max($h, 4) }}%;">
-                        <div class="absolute bottom-0 left-0 right-0 rounded-t-md bg-accent" style="height: 100%;"></div>
-                        @if($day->count > 0)
-                        <div class="absolute -top-5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition text-[10px] font-bold whitespace-nowrap bg-card border border-border rounded px-1 shadow">
-                            {{ number_format($day->revenue, 0, ',', ' ') }} F
-                        </div>
-                        @endif
-                    </div>
-                    <span class="text-[10px] text-muted-foreground">{{ \Carbon\Carbon::parse($day->date)->isoFormat('ddd') }}</span>
-                    <span class="text-[10px] font-semibold">{{ $day->count }}</span>
+        @php
+            $maxRev = $salesByDay->max('revenue') ?: 1;
+            $hasAnySales = $salesByDay->sum('revenue') > 0 || $salesByDay->sum('count') > 0;
+        @endphp
+
+        @if(!$hasAnySales)
+            <div class="flex h-48 items-center justify-center">
+                <div class="text-center">
+                    <svg class="mx-auto h-8 w-8 text-muted-foreground/40" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    <p class="mt-2 text-xs text-muted-foreground">Aucune vente sur les 7 derniers jours</p>
                 </div>
-            @endforeach
-        </div>
+            </div>
+        @else
+            <div class="flex items-end gap-2 h-48">
+                @foreach($salesByDay as $day)
+                    @php
+                        $h = min(100, ($day->revenue / $maxRev) * 100);
+                        $barH = max($h, 8);
+                    @endphp
+                    <div class="flex-1 flex flex-col items-center gap-1 group" title="{{ number_format($day->revenue, 0, ',', ' ') }} FCFA — {{ $day->count }} commande{{ $day->count > 1 ? 's' : '' }}">
+                        {{-- Barre avec tooltip au-dessus --}}
+                        <div class="relative w-full flex items-end" style="height: {{ $barH }}%;">
+                            @if($day->count > 0)
+                            <div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold whitespace-nowrap bg-card border border-border rounded px-1.5 py-0.5 shadow z-10 pointer-events-none">
+                                {{ number_format($day->revenue, 0, ',', ' ') }} F
+                            </div>
+                            @endif
+                            <div class="w-full rounded-t-md bg-accent transition-all group-hover:brightness-110" style="height: 100%;"></div>
+                        </div>
+                        <span class="text-[10px] text-muted-foreground">{{ \Carbon\Carbon::parse($day->date)->isoFormat('ddd') }}</span>
+                        <span class="text-[10px] font-semibold text-foreground">{{ $day->count }}</span>
+                    </div>
+                @endforeach
+            </div>
+        @endif
         <div class="mt-2 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
             <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-accent"></span> CA (FCFA)</span>
             <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm border border-border"></span> Nb commandes (chiffre sous barre)</span>

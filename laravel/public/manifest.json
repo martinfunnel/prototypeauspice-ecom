@@ -1,0 +1,27 @@
+{
+  "name": "Auspice Market",
+  "short_name": "Auspice",
+  "description": "Votre boutique en ligne 100% naturel. Compléments alimentaires bio, produits de santé et bien-être.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2e7d4a",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "fr",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://auspicemarket.com/manifest.json"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -54,4 +54,7 @@
     @endif
 
 </section>
+
+{{-- TESTIMONIALS --}}
+@include('components.testimonials-carousel', ['testimonials' => $testimonials])
 @endsection

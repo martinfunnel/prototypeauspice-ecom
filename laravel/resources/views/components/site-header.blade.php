@@ -9,7 +9,7 @@
             </div>
         </a>
 
-        {{-- Navigation --}}
+        {{-- Navigation desktop --}}
         <nav class="hidden items-center gap-1 md:flex">
             <a href="/" class="rounded-md px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Accueil</a>
             <a href="/catalogue" class="rounded-md px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Boutique</a>
@@ -42,6 +42,61 @@
                     Admin
                 </a>
             @endauth
+
+            {{-- Burger menu (mobile / tablette) --}}
+            <button type="button" id="burger-btn" class="grid h-10 w-10 place-items-center rounded-md text-foreground/80 transition hover:bg-muted md:hidden" aria-label="Menu" aria-expanded="false">
+                <svg id="burger-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <svg id="burger-close" xmlns="http://www.w3.org/2000/svg" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
     </div>
+
+    {{-- Menu mobile --}}
+    <div id="mobile-menu" class="hidden border-t border-border/60 bg-background/95 backdrop-blur md:hidden">
+        <nav class="max-w-7xl mx-auto flex flex-col gap-1 px-4 py-3">
+            <a href="/" class="rounded-md px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Accueil</a>
+            <a href="/catalogue" class="rounded-md px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Boutique</a>
+            <a href="/suivi" class="rounded-md px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Mes commandes</a>
+            <a href="/panier" class="rounded-md px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">Mon panier</a>
+            <div class="my-1 border-t border-border/40"></div>
+            @auth
+                <a href="/admin" class="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    Dashboard
+                </a>
+                <form action="/logout" method="POST">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                        Déconnexion
+                    </button>
+                </form>
+            @else
+                <a href="/login" class="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-foreground/80 transition hover:bg-muted hover:text-foreground">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    Admin
+                </a>
+            @endauth
+        </nav>
+    </div>
 </header>
+
+<script>
+document.getElementById('burger-btn')?.addEventListener('click', function() {
+    const menu = document.getElementById('mobile-menu');
+    const icon = document.getElementById('burger-icon');
+    const close = document.getElementById('burger-close');
+    const isOpen = !menu.classList.contains('hidden');
+    if (isOpen) {
+        menu.classList.add('hidden');
+        icon.classList.remove('hidden');
+        close.classList.add('hidden');
+        this.setAttribute('aria-expanded', 'false');
+    } else {
+        menu.classList.remove('hidden');
+        icon.classList.add('hidden');
+        close.classList.remove('hidden');
+        this.setAttribute('aria-expanded', 'true');
+    }
+});
+</script>

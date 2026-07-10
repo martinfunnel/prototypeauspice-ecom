@@ -4,17 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin — Auspice')</title>
+    <link rel="icon" type="image/png" href="/images/logo.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2e7d4a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Auspice Admin">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('components.vite-fallback')
 </head>
 <body class="min-h-screen bg-background">
 
-<div class="container mx-auto grid gap-6 px-4 py-6 lg:grid-cols-[220px_1fr]">
-    {{-- Sidebar — identique au React AdminShell --}}
+<div class="container mx-auto px-4 py-6">
+    {{-- Toggle mobile --}}
+    <div class="lg:hidden mb-4 flex items-center justify-between">
+        <span class="font-display text-lg font-bold">@yield('title', 'Admin')</span>
+        <button id="sidebar-toggle" type="button" class="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium shadow-card transition hover:bg-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            Menu
+        </button>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[220px_1fr]">
+    {{-- Sidebar — accordéon sur mobile, sticky sur desktop --}}
     <aside class="lg:sticky lg:top-6 lg:self-start">
-        <div class="rounded-2xl border border-border bg-card p-3 shadow-card">
+        <div id="sidebar-accordion" class="overflow-hidden transition-[max-height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] max-h-0 lg:max-h-none">
+            <div class="rounded-2xl border border-border bg-card p-3 shadow-card">
             <div class="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Administration
             </div>
@@ -38,6 +55,20 @@
                     @else
                     <span id="pending-count-badge" class="ml-auto hidden inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">0</span>
                     @endif
+                </a>
+                @endcanDo
+
+                @canDo('order_telegram_notification')
+                <a href="/admin/order-managers" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition {{ str_starts_with($path, 'admin/order-managers') ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:bg-muted' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.198 2.433a2.242 2.242 0 00-1.022.215l-16.06 6.69a1.456 1.456 0 00-.13 2.67l3.74 1.56 1.54 5.02c.113.37.48.62.91.62.31 0 .61-.13.8-.35l2.48-2.48 3.88 2.87c.34.25.79.27 1.16.06.37-.21.6-.6.6-1.02V4.24a2.24 2.24 0 00-2.07-1.807z"/></svg>
+                    Gérants Telegram
+                </a>
+                @endcanDo
+
+                @canDo('manage_country_codes')
+                <a href="/admin/country-codes" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition {{ str_starts_with($path, 'admin/country-codes') ? 'bg-primary text-primary-foreground' : 'text-foreground/80 hover:bg-muted' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Codes pays
                 </a>
                 @endcanDo
 
@@ -205,6 +236,38 @@ window.closePanelAnim = function(el) {
         a.addEventListener('click', () => showLoader());
     });
 
+    /* ---- Sidebar accordéon mobile ---- */
+    (function() {
+        const toggle = document.getElementById('sidebar-toggle');
+        const accordion = document.getElementById('sidebar-accordion');
+        if (!toggle || !accordion) return;
+
+        let isOpen = false;
+
+        toggle.addEventListener('click', function() {
+            isOpen = !isOpen;
+            accordion.style.maxHeight = isOpen ? accordion.scrollHeight + 'px' : '0';
+        });
+
+        // Fermer la sidebar quand on clique sur un lien (mobile)
+        accordion.querySelectorAll('a').forEach(function(a) {
+            a.addEventListener('click', function() {
+                if (window.innerWidth < 1024 && isOpen) {
+                    isOpen = false;
+                    accordion.style.maxHeight = '0';
+                }
+            });
+        });
+
+        // Reset sur resize vers desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024) {
+                accordion.style.maxHeight = '';
+                isOpen = false;
+            }
+        });
+    })();
+
     // Intercept form submits (except AJAX/inline)
     document.querySelectorAll('form').forEach(f => {
         if (!f.closest('.detail-panel') && !f.closest('.edit-panel') && !f.closest('aside')) {
@@ -290,6 +353,21 @@ function showToast(message, type = 'success') {
     setTimeout(checkPendingOrders, 2000);
 })();
 </script>
+
+    {{-- Service Worker PWA --}}
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js')
+                .then(function(registration) {
+                    console.log('[PWA] Service Worker enregistré', registration.scope);
+                })
+                .catch(function(err) {
+                    console.log('[PWA] Erreur enregistrement SW', err);
+                });
+        });
+    }
+    </script>
 
 </body>
 </html>

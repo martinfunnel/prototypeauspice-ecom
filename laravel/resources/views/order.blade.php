@@ -20,10 +20,18 @@
                     <span class="mb-1.5 block text-sm font-semibold">Nom complet *</span>
                     <input type="text" name="customer_name" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
                 </label>
-                <label class="block">
+                <div class="block">
                     <span class="mb-1.5 block text-sm font-semibold">Numéro de téléphone *</span>
-                    <input type="tel" name="customer_phone" required placeholder="+225 07 00 00 00 00" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
-                </label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <select id="country-code-select" name="country_code_id" required class="w-full shrink-0 rounded-lg border border-border bg-background px-3 py-2.5 text-sm shadow-sm outline-none focus:border-accent sm:w-auto" onchange="updatePhoneFormat()">
+                            <option value="">Pays</option>
+                            @foreach(\App\Models\CountryCode::orderBy('sort_order')->get() as $cc)
+                                <option value="{{ $cc->id }}" data-code="{{ $cc->code }}" data-digits="{{ $cc->digits }}" data-format="{{ $cc->format }}" data-pattern="{{ $cc->pattern }}" {{ $cc->iso === 'CIV' ? 'selected' : '' }}>@if($cc->flag_url)<img src="{{ $cc->flag_url }}" alt="" class="inline h-4 w-5 align-middle mr-1">@endif{{ $cc->name }} ({{ $cc->code }})</option>
+                            @endforeach
+                        </select>
+                        <input type="tel" id="customer-phone" name="customer_phone" required placeholder="Choisir un pays d'abord" class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent" disabled>
+                    </div>
+                </div>
                 <label class="block">
                     <span class="mb-1.5 block text-sm font-semibold">Commune / lieu de livraison *</span>
                     <select name="commune_id" required class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm shadow-sm outline-none focus:border-accent">
@@ -65,4 +73,83 @@
         </div>
     @endif
 </section>
+
+<script>
+const phoneInput = document.getElementById('customer-phone');
+const countrySelect = document.getElementById('country-code-select');
+let currentDigits = 0;
+let currentFormat = '';
+let currentPattern = null;
+
+function updatePhoneFormat() {
+    const opt = countrySelect.selectedOptions[0];
+    if (!opt || !opt.value) {
+        phoneInput.disabled = true;
+        phoneInput.placeholder = 'Choisir un pays d\'abord';
+        return;
+    }
+    phoneInput.disabled = false;
+    phoneInput.value = '';
+    currentDigits = parseInt(opt.dataset.digits, 10);
+    currentFormat = opt.dataset.format;
+    currentPattern = new RegExp(opt.dataset.pattern.replace(/^\//, '').replace(/\/$/, ''));
+    phoneInput.placeholder = currentFormat;
+    phoneInput.focus();
+}
+
+phoneInput.addEventListener('input', function(e) {
+    if (!currentDigits) return;
+    // Garde seulement les chiffres
+    let raw = this.value.replace(/\D/g, '');
+    // Limite au nombre de chiffres attendus
+    if (raw.length > currentDigits) raw = raw.slice(0, currentDigits);
+
+    // Formate selon le format du pays
+    let formatted = '';
+    let digitIdx = 0;
+    for (let i = 0; i < currentFormat.length && digitIdx < raw.length; i++) {
+        if (currentFormat[i] === 'X') {
+            formatted += raw[digitIdx];
+            digitIdx++;
+        } else {
+            // Si on est au début ou juste après un chiffre, ajoute le séparateur
+            if (digitIdx > 0 || i === 0) {
+                formatted += currentFormat[i];
+            }
+        }
+    }
+    this.value = formatted;
+});
+
+// Déclenche le format au chargement si un pays est pré-sélectionné
+if (countrySelect.value) {
+    updatePhoneFormat();
+}
+
+// Validation native avant soumission
+document.querySelector('form[action="/commande"]').addEventListener('submit', function(e) {
+    const opt = countrySelect.selectedOptions[0];
+    if (!opt || !opt.value) {
+        e.preventDefault();
+        countrySelect.focus();
+        return false;
+    }
+    const raw = phoneInput.value.replace(/\D/g, '');
+    const pattern = new RegExp(opt.dataset.pattern.replace(/^\//, '').replace(/\/$/, ''));
+    if (!pattern.test(raw)) {
+        e.preventDefault();
+        phoneInput.focus();
+        return false;
+    }
+    // Stocke le code pays complet dans un champ hidden
+    let hidden = document.querySelector('input[name="country_code"]');
+    if (!hidden) {
+        hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'country_code';
+        this.appendChild(hidden);
+    }
+    hidden.value = opt.dataset.code;
+});
+</script>
 @endsection
