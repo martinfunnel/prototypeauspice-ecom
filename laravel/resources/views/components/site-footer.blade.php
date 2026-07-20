@@ -41,10 +41,10 @@
         <div>
             <h4 class="mb-3 text-sm font-semibold uppercase tracking-wider text-primary-foreground/60">Contact</h4>
             <ul class="space-y-2 text-sm text-primary-foreground/80">
-                <li>📞 +225 07 11 75 13 25</li>
+                <li>📞 +225 07 77 03 69 77</li>
                 <li>📍 Abidjan, Côte d'Ivoire</li>
                 <li>
-                    <a href="https://wa.me/2250711751325" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:opacity-90">
+                    <a href="https://wa.me/2250777036977" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:opacity-90">
                         WhatsApp
                     </a>
                 </li>
